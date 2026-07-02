@@ -1,0 +1,17 @@
+# Run3 SIDM signal campaign — one Condor job per (point, era, chunk).
+# Resources are provisional; tuned after the one-job timing/memory test.
+universe   = vanilla
+executable = chain_job.sh
+arguments  = $(MBs) $(MDp) $(CHAN) $(CTAU) $(ERA) $(NEV) $(JOBIDX)
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+output = logs/$(CHAN)_MBs$(MBs)_MDp$(MDp)_ct$(CTAU)_$(ERA)_$(JOBIDX).$(Cluster).out
+error  = logs/$(CHAN)_MBs$(MBs)_MDp$(MDp)_ct$(CTAU)_$(ERA)_$(JOBIDX).$(Cluster).err
+log    = logs/campaign.$(Cluster).log
+request_cpus   = 4
+request_memory = 8GB
+request_disk   = 15GB
+x509userproxy  = /uscms_data/d3/murtazas/x509_proxy.pem
++ApptainerImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel8"
+max_materialize = 1000
+queue MBs MDp CHAN CTAU ERA NEV JOBIDX from campaign_args.txt
