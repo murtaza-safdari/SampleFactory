@@ -1,0 +1,70 @@
+{
+ "STEPS": [
+  "Run3Summer23BPixGENSIM",
+  "Run3Summer23BPixDIGIPremix",
+  "Run3Summer23BPixRECO"
+ ],
+ "KEEPS": [
+  "Run3Summer23BPixRECO"
+ ],
+ "WORKFLOWS": {
+  "Run3Summer23BPixGENSIM": {
+   "SCRAM_ARCH": "el8_amd64_gcc11",
+   "CMSSW_VERSION": "CMSSW_13_0_14",
+   "CUSTOMIZES": {
+    "files": [],
+    "pre-cmsRun": [],
+    "post-cmsRun": []
+   },
+   "OPTIONS": {
+    "eventcontent": "RAWSIM",
+    "datatier": "GEN-SIM",
+    "conditions": "130X_mcRun3_2023_realistic_postBPix_v6",
+    "beamspot": "Realistic25ns13p6TeVEarly2023Collision",
+    "step": "LHE,GEN,SIM",
+    "geometry": "DB:Extended",
+    "era": "Run3_2023",
+    "mc": null
+   }
+  },
+  "Run3Summer23BPixDIGIPremix": {
+   "SCRAM_ARCH": "el8_amd64_gcc11",
+   "CMSSW_VERSION": "CMSSW_13_0_14",
+   "CUSTOMIZES": {
+    "files": [],
+    "pre-cmsRun": [],
+    "post-cmsRun": []
+   },
+   "OPTIONS": {
+    "eventcontent": "PREMIXRAW",
+    "datatier": "GEN-SIM-RAW",
+    "conditions": "130X_mcRun3_2023_realistic_postBPix_v6",
+    "step": "DIGI,DATAMIX,L1,DIGI2RAW,HLT:2023v12",
+    "procModifiers": "premix_stage2",
+    "geometry": "DB:Extended",
+    "datamix": "PreMix",
+    "era": "Run3_2023",
+    "pileup_input": "dbs:/Neutrino_E-10_gun/Run3Summer21PrePremix-Summer23BPix_130X_mcRun3_2023_realistic_postBPix_v1-v1/PREMIX",
+    "mc": null
+   }
+  },
+  "Run3Summer23BPixRECO": {
+   "SCRAM_ARCH": "el8_amd64_gcc11",
+   "CMSSW_VERSION": "CMSSW_13_0_14",
+   "CUSTOMIZES": {
+    "files": [],
+    "pre-cmsRun": [],
+    "post-cmsRun": []
+   },
+   "OPTIONS": {
+    "eventcontent": "AODSIM",
+    "datatier": "AODSIM",
+    "conditions": "130X_mcRun3_2023_realistic_postBPix_v6",
+    "step": "RAW2DIGI,L1Reco,RECO,RECOSIM",
+    "geometry": "DB:Extended",
+    "era": "Run3_2023",
+    "mc": null
+   }
+  }
+ }
+}

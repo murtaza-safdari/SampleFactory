@@ -1,0 +1,16 @@
++JobBatchName = "SIDM_Run3"
+executable = @@SUBMITDIR@@/run.sh
+RequestMemory = @@RequestMemory@@
+request_disk = 20000000
+when_to_transfer_output = on_exit
+output = @@SUBMITDIR@@/SIDM.$(ClusterId).$(ProcId).stdout
+error = @@SUBMITDIR@@/SIDM.$(ClusterId).$(ProcId).stderr
+log = @@SUBMITDIR@@/SIDM.$(ClusterId).$(ProcId).stdlog
+environment = "PROCID=$(ProcId)"
+should_transfer_files = YES
+transfer_input_files = @@transfer_input_files@@
+use_x509userproxy = True
+x509userproxy = @@SUBMITDIR@@/MyProxy
++ApptainerImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel8"
+@@AccountingGroup@@
+queue @@queue@@

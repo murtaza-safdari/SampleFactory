@@ -1,0 +1,25 @@
+{
+  "description": "SIDM Run 3 signal grid: 6 M_Bs x 3 M_Zd x 5 ctau x 2 channels = 180 points, over 4 Run 3 eras.",
+  "chains": {
+    "2022": "data/chains/Run3/chain_Run3Summer22_SIDM.json",
+    "2022EE": "data/chains/Run3/chain_Run3Summer22EE_SIDM.json",
+    "2023": "data/chains/Run3/chain_Run3Summer23_SIDM.json",
+    "2023BPix": "data/chains/Run3/chain_Run3Summer23BPix_SIDM.json"
+  },
+  "fragment": "data/fragments/SIDM_BsTo2DpTo4l_TuneCP5_13p6TeV_cff.py",
+  "llpnano_step": "sidm_run3/run_llpnano.sh",
+  "llpnano_year_by_era": {
+    "2022": "2022PreEE",
+    "2022EE": "2022PostEE",
+    "2023": "2023PreBPix",
+    "2023BPix": "2023PostBPix"
+  },
+  "gridpack_pattern": "root://cmseos.fnal.gov//store/group/lpcmetx/SIDM/run3_samplegen/gridpacks/SIDM_BsTo2DpTo<CHAN>_MBs-<MBs>_MDp-<MDp>_gridpack.tar.xz",
+  "points_file": "sidm_run3_production/points_all.txt",
+  "how_to_run_one_point": [
+    "1. Pick the era's chain JSON above and the cell's gridpack (one per M_Bs,M_Zd,channel).",
+    "2. Run the chain to AODSIM via runFactory --host lpc: see 'Run one point on LPC' in sidm_run3/README.md (the validated recipe; it delivers GRIDPACK/CTAU to the job).",
+    "3. Run sidm_run3/run_llpnano.sh <AODSIM> <llpnano_year_by_era[era]> on the AODSIM for the nano.",
+    "See sidm_run3/example/example_run_one.sh for a standalone worked example."
+  ]
+}

@@ -20,7 +20,7 @@ class SubmitFactory:
 
         # This sets the factory path to the directory where runFactory.py is located
         self.FACTORY = os.path.dirname(os.path.abspath(__file__))
-        self.MY_NAME = "alabdelh"
+        self.MY_NAME = os.environ.get("USER", "alabdelh")
 
         self.BASE_OS = []
 
@@ -54,19 +54,30 @@ class SubmitFactory:
             return "2016"
         elif "22" in name and "EE" in name:
             return "2022EE"
+        elif "23" in name and "BPix" in name:
+            return "2023BPix"
+        elif "22" in name:
+            return "2022"
+        elif "23" in name:
+            return "2023"
+        return None
 
     def __parse_mass(self):
-        m = re.search(r"Mchi-[^_]+_dMchi-[^_]+", self.GRIDPACK)
-        if not m:
-            raise RuntimeError(f"Could not parse mass from gridpack: {gridpack}")
-        return m.group(0)
+        # Label only. IDM gridpacks match Mchi-/dMchi-; SIDM gridpacks carry channel + masses.
+        for pat in (r"Mchi-[^_]+_dMchi-[^_]+", r"BsTo2DpTo[A-Za-z0-9]+_MBs-[^_]+_MDp-[^_]+"):
+            m = re.search(pat, self.GRIDPACK)
+            if m:
+                return m.group(0)
+        return os.path.basename(self.GRIDPACK).split(".")[0]
 
     def __parse_ctau(self):
-        base = os.path.basename(self.ARGS["fragment"])
-        m = re.search(r"ctau-[^_.]+", base)
-        if not m:
-            raise RuntimeError(f"Could not parse ctau from fragment name: {base}")
-        return m.group(0)
+        # Label only. IDM encodes ctau in the fragment name; SIDM sets it via the CTAU env.
+        for src in (os.path.basename(self.ARGS["fragment"]), os.path.basename(self.GRIDPACK)):
+            m = re.search(r"ctau-[^_.]+", src)
+            if m:
+                return m.group(0)
+        ctau = self.ENVS.get("CTAU") or os.environ.get("CTAU")
+        return "ctau-%s" % ctau if ctau else "ctau-unset"
 
     def __extract_gridpack_info(self, fragment_path):
         spec = importlib.util.spec_from_file_location("fragment", fragment_path)
@@ -122,6 +133,7 @@ class SubmitFactory:
         self.CRAB_PATH = user_json.get("CRAB_PATH", None)
         self.CRAB_SITE = user_json.get("CRAB_SITE", None)
         self.AccountingGroup = user_json.get("AccountingGroup", None)
+        self.ENVS = user_json.get("envs", {})
 
         self.__validate_JOBS(steps=steps, workflows=workflows, keeps=keeps)
         if self.ARGS["fragment"]:

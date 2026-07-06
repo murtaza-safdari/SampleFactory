@@ -1,0 +1,15 @@
+universe = vanilla
+executable = gen_validate_job.sh
+arguments = $(MBs) $(MDp) $(CHAN) $(CTAU)
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_input_files = check_grid_point.py
+output = logs/gen_$(CHAN)_MBs$(MBs)_MDp$(MDp)_ct$(CTAU).$(Cluster).out
+error  = logs/gen_$(CHAN)_MBs$(MBs)_MDp$(MDp)_ct$(CTAU).$(Cluster).err
+log    = logs/genval.$(Cluster).log
+request_cpus = 2
+request_memory = 4GB
+request_disk = 8GB
+x509userproxy = /uscms_data/d3/murtazas/x509_proxy.pem
++ApptainerImage = "/cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel8"
+queue MBs MDp CHAN CTAU from gen_validate_args.txt
