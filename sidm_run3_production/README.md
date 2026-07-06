@@ -4,6 +4,11 @@ Private full-chain Run 3 signal Monte Carlo for the SIDM displaced dark-photon (
 search. This is a standalone HTCondor production chain (not the McM-driven SampleFactory driver
 in the repo root); it lives here as the SIDM Run 3 production area.
 
+> **This is the reference implementation** — the chain that actually produced the 2,880 samples on
+> `lpcmetx` EOS. For the minimal, SampleFactory-native expression of the same recipe (per-era chain
+> JSONs + fragment + the LLPNanoAOD add-on) and a provenance map of exactly what changed vs the IDM
+> Run 3 / Run 2 SIDM / Sunil workflows, see [`../sidm_run3/PROVENANCE.md`](../sidm_run3/PROVENANCE.md).
+
 ## Signal and grid
 
 Process: `pp -> pseudoscalar (pdgId 35) -> 2 dark photons Z_d (pdgId 32) -> collimated dilepton
