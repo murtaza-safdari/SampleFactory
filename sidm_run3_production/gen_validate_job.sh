@@ -42,12 +42,12 @@ generator = cms.EDFilter("Pythia8HadronizerFilter", maxEventsToPrint=cms.untrack
         parameterSets=cms.vstring('pythia8CommonSettings','pythia8CP5Settings','pythia8PSweightsSettings','processParameters')))
 ProductionFilterSequence = cms.Sequence(generator)
 EOF
-scram b -j4 >/dev/null 2>&1
+scram b -j4 > $WORKDIR/scramb.log 2>&1 || { echo "FAIL scram b"; tail -25 $WORKDIR/scramb.log; exit 4; }
 cmsDriver.py Configuration/GenProduction/python/${NAME}_cff.py --python_filename ${NAME}_gen.py \
   --eventcontent RAWSIM --datatier GEN-SIM --fileout file:${NAME}_gen.root \
   --conditions 124X_mcRun3_2022_realistic_v12 --beamspot Realistic25ns13p6TeVEarly2022Collision \
-  --step LHE,GEN --era Run3 --mc -n 500 --nThreads 2 --no_exec >/dev/null 2>&1
-cmsRun ${NAME}_gen.py > $WORKDIR/gen.log 2>&1 || { echo "FAIL GEN"; tail -25 $WORKDIR/gen.log; exit 5; }
+  --step LHE,GEN --era Run3 --mc -n 500 --nThreads 2 --no_exec > $WORKDIR/gs_drv.log 2>&1 || { echo "FAIL cmsDriver"; tail -25 $WORKDIR/gs_drv.log; exit 5; }
+cmsRun ${NAME}_gen.py > $WORKDIR/gen.log 2>&1 || { echo "FAIL GEN"; tail -25 $WORKDIR/gen.log; exit 6; }
 
 python3 $WORKDIR/check_grid_point.py $NAME $CTAU > $WORKDIR/result.txt 2>&1
 cat $WORKDIR/result.txt

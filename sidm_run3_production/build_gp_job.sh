@@ -63,7 +63,8 @@ if [ "$NPROC" -lt 1 ]; then
 fi
 echo "### built $TAR ($(stat -c%s $TAR) bytes, process/madevent entries=$NPROC) ### $(date)"
 
-xrdcp -f -N "$TAR" $EOS/gridpacks/${GPBASE}_gridpack.tar.xz || { echo "FAIL gridpack xrdcp"; exit 7; }
+# --posc + rm-on-error so a partial upload can't be blessed by the >15MB idempotency skip on resubmit
+xrdcp -f -N --posc "$TAR" $EOS/gridpacks/${GPBASE}_gridpack.tar.xz || { echo "FAIL gridpack xrdcp"; xrdfs root://cmseos.fnal.gov rm $EOSP/gridpacks/${GPBASE}_gridpack.tar.xz 2>/dev/null; exit 7; }
 RSIZE=$(statsize $EOSP/gridpacks/${GPBASE}_gridpack.tar.xz); LSIZE=$(stat -c%s "$TAR")
-[ "$LSIZE" = "$RSIZE" ] || { echo "FAIL xrdcp size mismatch local=$LSIZE remote=$RSIZE"; exit 8; }
+[ "$LSIZE" = "$RSIZE" ] || { echo "FAIL xrdcp size mismatch local=$LSIZE remote=$RSIZE"; xrdfs root://cmseos.fnal.gov rm $EOSP/gridpacks/${GPBASE}_gridpack.tar.xz 2>/dev/null; exit 8; }
 echo "######## BUILD DONE ($RSIZE bytes) -> gridpacks/${GPBASE}_gridpack.tar.xz ######## $(date)"

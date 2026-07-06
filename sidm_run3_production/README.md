@@ -12,7 +12,9 @@ lepton-jets`. Two channels: **4Mu** (both `Z_d -> mu mu`) and **2Mu2E** (one `Z_
 
 Grid (matches the 2018 v10 analysis grid): 6 bound-state masses `M_Bs ∈ {100,150,200,500,800,1000}`
 GeV × 3 dark-photon masses `M_Zd ∈ {0.25,1.2,5.0}` GeV × 5 cτ per cell = 90 points/channel →
-**180 points**. cτ values per (M_Bs, M_Zd) cell follow the analysis `sidm/configs/signal_grid.yaml`.
+**180 points**. The cτ value list per (M_Bs, M_Zd) cell is the 2018 v10 grid (the sample keys in
+`points_all.txt`); the analysis `sidm/configs/signal_grid.yaml` holds the per-cell proper-to-lab-frame
+conversion factors, not the cτ values themselves.
 Four Run 3 eras: 2022 (pre-EE), 2022EE (post-EE), 2023 (pre-BPix), 2023BPix (post-BPix).
 
 ## One gridpack per (M_Bs, M_Zd, channel), reused across cτ
@@ -62,7 +64,19 @@ no reco procModifiers. This is encoded per-era in `chain_job.sh`.
 All jobs run in the el8 CMSSW apptainer via `+ApptainerImage = /cvmfs/singularity.opensciencegrid.org/cmssw/cms:rhel8`
 (works on el9 workers, no nesting). Workers do not mount `/uscms_data`, so inputs are pulled from EOS
 via xrootd and stock CMSSW comes from cvmfs. Set `x509userproxy` in the `.sub` files to a valid VOMS
-proxy on shared NFS.
+proxy on shared NFS. Create the log directory once (`mkdir -p logs`) — all three `.sub` files write
+to `logs/` and HTCondor will not create it.
+
+**Prerequisites — two EOS payloads, staged once** under
+`/store/group/lpcmetx/SIDM/run3_samplegen/payload/`, fetched by the jobs at runtime:
+- `genpro_repo.tar.gz` — a `cms-sw/genproductions` checkout **with its `.git`** (so
+  `gridpack_generation.sh`'s path resolution works on a worker). Rebuild:
+  `git clone https://github.com/cms-sw/genproductions.git && tar czf genpro_repo.tar.gz genproductions`,
+  then `xrdcp` to the payload area. Used by `build.sub`.
+- `payload_CMSSW_13_0_13.tar.gz` — the prebuilt LLPNanoAOD release: `cmsrel CMSSW_13_0_13`, add
+  `cms-sidm/LLPNanoAOD @ LLPnanoAODv1_Run3_devel` (+ the RecoVertex/PhysicsTools corrections it ships)
+  and `scram b`, then `tar czf payload_CMSSW_13_0_13.tar.gz CMSSW_13_0_13` and `xrdcp` to the payload
+  area. Used by `campaign.sub` (chain step 4).
 
 1. **Build the 36 gridpacks** (once): `condor_submit build.sub` — queues `build_gp_job.sh` over
    `build_args.txt` (the 36 cells). Each fetches a full genproductions checkout, builds the gridpack,
@@ -73,9 +87,10 @@ proxy on shared NFS.
    `campaign_args.txt`. Each job runs the full chain for one (point, era, chunk) and xrdcp's the
    LLPNanoAOD to EOS `outputs/<era>/<name>/`. Idempotent (skips existing outputs); resubmitting the
    same args re-runs only the missing chunks.
-4. **GEN-level validation** (optional): `condor_submit gen_validate.sub` — a GEN-only (LHE,GEN)
-   lifetime + kinematics check per point (measured/nominal proper cτ, masses, channel), written to
-   EOS `validation/`.
+4. **GEN-level validation** (optional): build its point list once,
+   `python3 make_campaign_args.py points_all.txt --gen-validate > gen_validate_args.txt`, then
+   `condor_submit gen_validate.sub` — a GEN-only (LHE,GEN) lifetime + kinematics check per point
+   (measured/nominal proper cτ, masses, channel), written to EOS `validation/`.
 5. **Location YAML for the analysis:** `python3 make_run3_location_yaml.py <out_dir>` — crawls the
    produced nanos and writes `signal_4mu_run3.yaml` / `signal_2mu2e_run3.yaml` in the `make_fileset`
    shape (keyed by era), for `sidm/configs/ntuples/` in the analysis repo.
@@ -88,8 +103,10 @@ The LLPNanoAOD payload is `cms-sidm/LLPNanoAOD @ LLPnanoAODv1_Run3_devel`, prebu
 - **Lifetime + kinematics** (180-point GEN-level scan): measured/nominal proper cτ = 0.995 ± 0.030,
   all 180 points within 10% of 1.0, unbiased across five orders of magnitude in cτ; pscalar mass
   exact, dark-photon mass within the Breit-Wigner width; channel composition correct at every point.
-- **Trigger efficiency** (Run3 displaced-dimuon OR vs the 2018 L2 set), stable across eras:
+- **Trigger efficiency** (Run3 displaced-dimuon OR vs the 2018 L2 set), stable across all four eras:
   4Mu 62% → 70%, 2Mu2E 21% → 28% (grid means), with the largest gains in the soft/displaced corners.
+  Reproduce with `trigger_eff_grid.py <era>` (run in the analysis venv over the produced nanos); the
+  full per-era, per-point tables and method are in `TRIGGER_EFFICIENCY.md`.
 
 ## Build gotcha (why `build_gp_job.sh` is the way it is)
 

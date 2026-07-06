@@ -26,12 +26,15 @@ p p -> pscalar (pdgId 35) -> Z_d Z_d (pdgId 32) ,  Z_d -> l+ l-
 ## 2. Why a custom NanoAOD from AOD (the central tiers are not enough)
 
 The displaced signature lives in objects that **central MiniAOD/NanoAOD slim away**: displaced
-standalone/global muons (`displacedStandAloneMuons`, `displacedGlobalMuons`) and the general tracks
-needed to build displaced dimuon vertices exist in **AOD** but are dropped downstream. The SIDM
-analysis reads a custom **LLPNanoAOD** that re-adds them (the `DSAMuon` table, `Muon.dsaMatch*`
-indices, extended `GenPart` vertex fields `vx/vy/vz`, dimuon-vertex tables). So the production
-**must run a custom NanoAOD step on the AODSIM** — a central-NanoAOD shortcut would silently lose
-the displaced content. This is the single most important structural fact about the chain.
+standalone muons (`displacedStandAloneMuons`), displaced global muons (`displacedGlobalMuons`), and
+the general tracks needed to build displaced dimuon vertices exist in **AOD** but are dropped
+downstream. The SIDM analysis reads a custom **LLPNanoAOD** that re-adds them. This production runs
+the LLPNanoAOD step with `includeDSAMuon=True` (the `DSAMuon` table + `Muon.dsaMatch*` indices),
+`includeGenPart=True` (extended `GenPart` vertex fields `vx/vy/vz`), `includeBS`/`includeRefittedTracks`,
+and — matching the analysis's current v10 inputs — **`includeDGLMuon=False`** (the displaced-global
+table is available in LLPNanoAOD but is not written here). So the production **must run a custom
+NanoAOD step on the AODSIM** — a central-NanoAOD shortcut would silently lose the displaced content.
+This is the single most important structural fact about the chain.
 
 Data-tier flow per event:
 
@@ -120,13 +123,16 @@ HTCondor with the nano written to **KNU Tier-2**.
 - **Lifetime + kinematics, all 180 points, both channels** (GEN-level scan): measured/nominal proper
   cτ = **0.995 ± 0.030**, all within 10% of 1.0, unbiased across five orders of magnitude in cτ;
   pscalar mass exact, dark-photon mass within the Breit-Wigner width; channel composition correct.
-  Cross-checked at the produced-nano level via the analysis location YAML (meas/nom ≈ 1.0–1.02).
-- **Trigger efficiency** (Run 3 displaced-dimuon OR vs the 2018 L2 set), stable across eras: 4Mu
-  62% → 70%, 2Mu2E 21% → 28% (grid means), largest gains in the soft/displaced corners.
+  Cross-checked at the produced-nano level via the analysis location YAML (meas/nom ≈ 0.97–1.03).
+- **Trigger efficiency** (Run 3 displaced-dimuon OR vs the 2018 L2 set), stable across all four eras:
+  4Mu 62% → 70%, 2Mu2E 21% → 28% (grid means), largest gains in the soft/displaced corners
+  (per-era/per-point tables + method in `TRIGGER_EFFICIENCY.md`).
 - **Note for the analysis:** the current `SidmProcessor` does not yet run on Run 3 nano out of the
-  box (Run 2-specific electron-ID branch names, e.g. `mvaFall17V2noIso_WPL`, and a missing `mass`
-  field); the samples are gen-valid, but the coffea analysis needs a Run 3 adaptation pass before it
-  can process them. This is tracked separately.
+  box. There are (at least) two blockers: (1) Run 2-specific electron-ID branch names (e.g.
+  `mvaFall17V2noIso_WPL`) and a `mass` field the schema expects; and (2) `sidm/configs/run_periods.yaml`
+  has only `2018`, so `postprocess`'s `get_lumixs_weight(year)` lookup raises `KeyError` for the Run 3
+  eras. The samples are gen-valid, but the coffea analysis needs a Run 3 adaptation pass (electron ID +
+  a Run 3 `run_periods` entry) before it can process them. Tracked separately.
 
 ## 6. Reproducing
 

@@ -147,13 +147,17 @@ print("SANITY nEvents=%d DSAMuon=%s GenPart_vx=%s dsaMatch=%s Runs=%d"%(
   n, any(b.startswith('DSAMuon') for b in bs), 'GenPart_vx' in bs, any('dsaMatch' in b for b in bs), sumw))
 sys.exit(0 if (n>0 and r) else 1)
 PYEOF
+SRC=$?
 cat $WORKDIR/sanity.txt
-grep -q "SANITY nEvents=" $WORKDIR/sanity.txt || fail STEP4_SANITY 14 $WORKDIR/sanity.txt
+# HARD FAIL on unopenable / no Events tree / 0 events / missing Runs (broken genEventSumw) -- the python exits 1 in all those cases
+[ "$SRC" -eq 0 ] || fail STEP4_SANITY "$SRC" $WORKDIR/sanity.txt
 
 # ================= STEP 5: xrdcp nano to EOS (with size verify) =================
 echo "### STEP5 xrdcp -> $EOSP/outputs/$ERA/$NAME/$OUTNAME ### $(date)"
 xrdfs root://cmseos.fnal.gov mkdir -p $EOSP/outputs/$ERA/$NAME 2>/dev/null
-xrdcp -f -N "$NANO" $EOS/outputs/$ERA/$NAME/$OUTNAME || { echo "FAIL nano xrdcp"; exit 12; }
+# --posc: persist-on-successful-close, so a failed/interrupted transfer leaves no partial file
+# on EOS (which the >100KB idempotency skip would otherwise permanently bless on resubmit).
+xrdcp -f -N --posc "$NANO" $EOS/outputs/$ERA/$NAME/$OUTNAME || { echo "FAIL nano xrdcp"; xrdfs root://cmseos.fnal.gov rm $EOSP/outputs/$ERA/$NAME/$OUTNAME 2>/dev/null; exit 12; }
 LSIZE=$(stat -c%s "$NANO"); RSIZE=$(statsize $EOSP/outputs/$ERA/$NAME/$OUTNAME)
-[ "$LSIZE" = "$RSIZE" ] || { echo "FAIL xrdcp size mismatch local=$LSIZE remote=$RSIZE"; exit 13; }
+[ "$LSIZE" = "$RSIZE" ] || { echo "FAIL xrdcp size mismatch local=$LSIZE remote=$RSIZE"; xrdfs root://cmseos.fnal.gov rm $EOSP/outputs/$ERA/$NAME/$OUTNAME 2>/dev/null; exit 13; }
 echo "######## CHAIN DONE ($RSIZE bytes) -> $EOSP/outputs/$ERA/$NAME/$OUTNAME ######## $(date)"
