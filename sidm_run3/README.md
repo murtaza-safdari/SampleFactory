@@ -4,8 +4,11 @@ A deliberately **minimal, explicit delta** on three validated workflows — the 
 driver, the Run 2 SIDM production, and Sunil's Run 3 chain. **Read `PROVENANCE.md` first** — it maps
 every artifact to its origin and the exact change.
 
-- `../data/chains/Run3/chain_Run3Summer*_SIDM.json` — the per-era chains (gen → **AODSIM**), run by
-  the standard `runFactory`. = IDM's chains with our McM-verified conditions + the SIDM fragment + stop at AODSIM.
+- `../data/chains/Run3/chain_Run3Summer*_SIDM.json` — the per-era chains (gen → **AODSIM**),
+  **structured for the standard `runFactory`** (byte-identical shape to IDM's Run 3 chains) = IDM's
+  chains with our McM-verified conditions + the SIDM fragment + stop at AODSIM. The tested-runnable
+  path on LPC is the `example/` script and the `../sidm_run3_production/` reference implementation
+  (which produced the samples); driving `runFactory` itself is LXPLUS/CRAB-oriented and untested here.
 - `../data/fragments/SIDM_BsTo2DpTo4l_TuneCP5_13p6TeV_cff.py` — the SIDM fragment = the Run 2 SIDM
   fragment + 3 labeled lines (13.6 TeV, Run 3 CP5 tune, the lifetime robustness lines).
 - **`run_llpnano.sh`** — THE one new step: run the custom LLPNanoAOD on the AODSIM (the only tier that

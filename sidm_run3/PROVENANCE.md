@@ -18,8 +18,10 @@ custom LLPNanoAOD (PAT→NANO, `cms-sidm/LLPNanoAOD`) on the AODSIM so the `DSAM
 production is needed at all.
 
 ## The chains — `data/chains/Run3/chain_Run3Summer*_SIDM.json`
-= the **IDM SampleFactory** Run 3 chain JSONs (same structure, run by the same `runFactory` machinery),
-with three changes:
+= the **IDM SampleFactory** Run 3 chain JSONs (byte-identical shape, structured for the same
+`runFactory` machinery — driving runFactory itself is LXPLUS/CRAB-oriented and untested on LPC; the
+tested-runnable paths here are the `sidm_run3/example/` script and the `sidm_run3_production/`
+reference implementation that produced the samples), with three changes:
 1. the GEN step's fragment = the SIDM fragment (below),
 2. **`KEEPS` = the RECO/AODSIM step** — we stop at AODSIM, and the LLPNanoAOD add-on runs on it,
 3. per-era conditions set to the McM-verified values below.
