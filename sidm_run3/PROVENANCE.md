@@ -42,21 +42,46 @@ Two per-era points worth calling out (both verified against central production):
 - **2022EE uses the Summer22 (non-EE) premix library and HLT `2022v14`** (McM-confirmed on
   `EXO-Run3Summer22EEDRPremix-01379`). An older IDM chain JSON shows the Summer22EE premix + `2022v12`
   — that is stale; central Run3Summer22EE uses what we use.
+- **Release caveats** (global tags carry the conditions; releases differ mildly across central
+  requests): our 2022EE steps run in CMSSW_12_4_11_patch3, while the mature central round and
+  Sunil's script use 12_4_20 (GEN-SIM) / 12_4_16 (premix+RECO) — same 12_4 cycle and the same
+  `postEE_v1` global tag. Central 2022 GEN-SIM used both 12_4_19 (ours) and 12_4_20 depending on
+  the physics group. Align releases with the central choice in any future production round.
+- **2023 global tag**: we use `130X_mcRun3_2023_realistic_v14` (the value on the official GTsRun3
+  twiki for Run3Summer23); much of the higher-volume central Run3Summer23 production uses `_v15`.
+  When the Run 3 background samples are chosen, match the signal DR/RECO conditions to theirs.
 - **Beamspot / `--era`** (not in the table above): `Realistic25ns13p6TeVEarly2022Collision` with
   `--era Run3` for 2022/22EE; `Realistic25ns13p6TeVEarly2023Collision` with `--era Run3_2023` for
   2023/23BPix — the standard per-era values, as in central production and the reference implementation.
 
 ## The fragment — `data/fragments/SIDM_BsTo2DpTo4l_TuneCP5_13p6TeV_cff.py`
-= the **Run 2 SIDM** genproductions fragment with exactly:
+= the **Run 2 SIDM** genproductions fragment with these changes:
 - `comEnergy` 13000 → **13600**,
 - CP5 tune import `MCTunes2017` → **`MCTunesRun3ECM13p6TeV`**,
 - **added** `SLHA:useDecayTable=off` + `32:tauCalc=off` (robustness — the lifetime is set by `32:tau0`,
-  exactly as in Run 2 SIDM and Sunil's fragments; these two lines just stop the gridpack's embedded
-  `DECAY 32` width from silently overriding it).
+  exactly as in Run 2 SIDM and Sunil's fragments; these two lines stop the gridpack's embedded
+  `DECAY 32` width from silently overriding it) + `32:mayDecay=on`,
+- **settings-block difference**: the Run 2 fragment included `pythia8aMCatNLOSettingsBlock` (aMC@NLO
+  shower-matching settings: restricted shower starting scale, `MEcorrections=off`, global recoil);
+  this fragment instead includes `pythia8PSweightsSettingsBlock` (parton-shower variation weights).
+  The matching block targets NLO/aMC@NLO LHE input; these gridpacks are LO. Measured impact vs the
+  2018 v10 samples (200 GeV / 1.2 GeV point): the dark-photon pT is ~6% softer at the median
+  (KS D = 0.13) with correspondingly ~10% softer lepton pT and wider lepton-pair ΔR, and a slightly
+  larger FSR tail (m(ll) < 0.95 m_Zd: 32% → 38%); masses, proper lifetime, and channel composition
+  are unaffected. A few-percent ISR-recoil shape effect of this kind is absorbed by computing
+  efficiencies on the Run 3 samples themselves (never transporting 2018 efficiencies). Kept as-is
+  for the produced samples; revisit consciously before any future mass production.
 
-**No gen filter** — matches the v10 Run 2 SIDM samples (whose YAML says *"no unwanted gen filters"*).
-Sunil's Run 3 fragments add a ≥4-lepton acceptance filter; we omit it to match v10. The gridpack path
-and cτ are per-job environment variables (`GRIDPACK`, `CTAU`), exactly as in the IDM fragments.
+**No gen filter** — the Run 3 samples cover the **full lepton phase space**. Note this does NOT
+exactly match the v10 2018 samples: despite their YAML's *"no unwanted gen filters"*, the v10 gen
+leptons carry acceptance cuts (a hard |η| < 2.4 edge — 0 of 46k measured leptons beyond it — and a
+minimum lepton pT of about 1 GeV), while the Run 3 samples have none (lepton |η| out to ~6, pT to
+~0.1 GeV). Consequences: (i) acceptance/efficiency denominators differ between v10 and Run 3 — a
+Run 3 "per generated event" efficiency is not directly comparable to a v10 one; (ii) for shape
+comparisons, apply |η| < 2.4 (and pT > 1 GeV) to the Run 3 gen leptons first — the validation
+notebook does this explicitly. Sunil's Run 3 fragments add a ≥4-lepton acceptance filter; we omit
+any filter. The gridpack path and cτ are per-job environment variables (`GRIDPACK`, `CTAU`), exactly
+as in the IDM fragments.
 
 ## The gridpacks
 Built from the **Run 2 SIDM** MadGraph cards at 13.6 TeV. **One gridpack per (M_Bs, M_Zd, channel)**
@@ -87,8 +112,9 @@ drive the chains above on the LPC batch system (IDM/LXPLUS behaviour is unchange
 3. `runFactory.py` — the output-directory **label** parsers now recognise the Run 3 eras
    (`__parse_year`) and the SIDM gridpack channel/mass naming (`__parse_mass`, `__parse_ctau`) instead
    of raising or returning `None` on non-IDM names, and the per-user config name reads `$USER` (default
-   still `alabdelh`). These name the job's output directory only; they touch no physics and leave IDM
-   behaviour identical.
+   still `alabdelh`). These name the job's output directory only; they touch no physics.
+   (One label-only side effect: IDM chain names containing a bare "22"/"23" that previously fell
+   through to a `None` label now get a year label — directory naming only.)
 4. the fragment resolves the gridpack to an absolute path (`os.path.abspath`) so
    `ExternalLHEProducer` finds the condor-transferred tarball — a no-op when the path is already
    absolute (the standalone/cvmfs case) — and requires `CTAU` explicitly (fail loud, like `GRIDPACK`)
