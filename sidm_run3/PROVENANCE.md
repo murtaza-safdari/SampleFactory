@@ -39,17 +39,27 @@ match Sunil's table:
 Two per-era points worth calling out (both verified against central production):
 - **2023 / 2023BPix RECO uses NO `siPixelQualityRawToDigi` procModifier** (2022/22EE do). Using the
   2022 setting on 2023 raises `NoProxyException: SiPixelQuality forRawToDigi`.
+- **2023 / 2023BPix AODSIM event content**: central Summer23(+BPix) DRPremix additionally keeps the
+  muon rechit collections (`dt1DRecHits`, `csc2DRecHits`, `rpcRecHits`) in AODSIM via an
+  `outputCommands` customisation; our chain writes default AODSIM. Nothing consumed downstream
+  breaks (the LLPNanoAOD `DSAMuon` content is built from tracks/hitPattern), but rechit-level
+  studies (e.g. muon-detector shower tagging) are not possible on these AODSIMs. Add the
+  `outputCommands` extension in any future production round.
 - **2022EE uses the Summer22 (non-EE) premix library and HLT `2022v14`** (McM-confirmed on
   `EXO-Run3Summer22EEDRPremix-01379`). An older IDM chain JSON shows the Summer22EE premix + `2022v12`
   — that is stale; central Run3Summer22EE uses what we use.
 - **Release caveats** (global tags carry the conditions; releases differ mildly across central
-  requests): our 2022EE steps run in CMSSW_12_4_11_patch3, while the mature central round and
-  Sunil's script use 12_4_20 (GEN-SIM) / 12_4_16 (premix+RECO) — same 12_4 cycle and the same
+  requests): our 2022EE steps run in CMSSW_12_4_11_patch3 — the Run3Summer22EE campaign's own
+  release for central GEN-SIM and the early central DRPremix rounds (McM public API); later central
+  rounds moved to 12_4_20 (GEN-SIM) / 12_4_16 (premix+RECO), as in Sunil's script, at the same
   `postEE_v1` global tag. Central 2022 GEN-SIM used both 12_4_19 (ours) and 12_4_20 depending on
   the physics group. Align releases with the central choice in any future production round.
 - **2023 global tag**: we use `130X_mcRun3_2023_realistic_v14` (the value on the official GTsRun3
   twiki for Run3Summer23); much of the higher-volume central Run3Summer23 production uses `_v15`.
   When the Run 3 background samples are chosen, match the signal DR/RECO conditions to theirs.
+  Likewise 2023BPix: our 13_0_14 + `postBPix_v6` pairing takes each element from a central round
+  (early central used 13_0_14 + `postBPix_v2`, later rounds 13_0_17 + `postBPix_v6`) — i.e. the
+  GTs here follow the GTsRun3 twiki snapshot values rather than one frozen per-campaign pairing.
 - **Beamspot / `--era`** (not in the table above): `Realistic25ns13p6TeVEarly2022Collision` with
   `--era Run3` for 2022/22EE; `Realistic25ns13p6TeVEarly2023Collision` with `--era Run3_2023` for
   2023/23BPix — the standard per-era values, as in central production and the reference implementation.
