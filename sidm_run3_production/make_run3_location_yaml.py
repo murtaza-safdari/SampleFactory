@@ -6,7 +6,7 @@
 import subprocess, re, sys
 
 OUT_DIR = sys.argv[1] if len(sys.argv) > 1 else "."
-ERAS = ["2022", "2022EE", "2023", "2023BPix"]
+ERAS = ["2022", "2022EE", "2023", "2023BPix", "2024"]
 EOSP = "/store/group/lpcmetx/SIDM/run3_samplegen/outputs"
 # xcache URL to match the repo convention (signal_*_v10.yaml etc.): make_fileset(..., replace_xcache=True)
 # rewrites root://xcache// -> root://cmseos.fnal.gov// on LPC, while coffea-casa gets the cache path.
@@ -29,9 +29,9 @@ def ls(d):
 
 for chan in ["4Mu", "2Mu2E"]:
     lines = [f"# Run3 {chan} signal samples (private full-chain production; LLPNanoAOD).",
-             f"# Auto-generated from EOS: {EOSP}/<era>/. ntuple_version key = era (2022/2022EE/2023/2023BPix).",
+             f"# Auto-generated from EOS: {EOSP}/<era>/. ntuple_version key = era (2022/2022EE/2023/2023BPix/2024).",
              f"# Consume via make_fileset(samples, ntuple_version=<era>, location_cfg='signal_{chan.lower()}_run3.yaml', replace_xcache=True).",
-             "# NOTE: sample keys repeat identically across all four era blocks (no era token in the key),",
+             "# NOTE: sample keys repeat identically across all era blocks (no era token in the key),",
              "#       so consume ONE era at a time. Merging eras into a single fileset requires namespacing",
              "#       by era first (otherwise the shared keys collide / overwrite)."]
     total = 0

@@ -35,6 +35,7 @@ match Sunil's table:
 | 2022EE   | CMSSW_12_4_11_patch3| CMSSW_12_4_11_patch3| 124X_mcRun3_2022_realistic_postEE_v1   | 2022v14 | premix_stage2,siPixelQualityRawToDigi | siPixelQualityRawToDigi | 2022PostEE |
 | 2023     | CMSSW_13_0_17       | CMSSW_13_0_14       | 130X_mcRun3_2023_realistic_v14         | 2023v12 | premix_stage2 | (none) | 2023PreBPix  |
 | 2023BPix | CMSSW_13_0_14       | CMSSW_13_0_14       | 130X_mcRun3_2023_realistic_postBPix_v6 | 2023v12 | premix_stage2 | (none) | 2023PostBPix |
+| 2024     | CMSSW_14_0_21       | CMSSW_14_0_21       | 140X_mcRun3_2024_realistic_v26         | 2024v14 | premix_stage2 | (none) | 2024 (LLPNano in CMSSW_14_0_21) |
 
 Two per-era points worth calling out (both verified against central production):
 - **2023 / 2023BPix RECO uses NO `siPixelQualityRawToDigi` procModifier** (2022/22EE do). Using the
@@ -60,9 +61,40 @@ Two per-era points worth calling out (both verified against central production):
   Likewise 2023BPix: our 13_0_14 + `postBPix_v6` pairing takes each element from a central round
   (early central used 13_0_14 + `postBPix_v2`, later rounds 13_0_17 + `postBPix_v6`) — i.e. the
   GTs here follow the GTsRun3 twiki snapshot values rather than one frozen per-campaign pairing.
+- **2024** (central campaign `RunIII2024Summer24` — note `RunIII2024`, not `Run3Summer24`, in the DAS
+  names): read from McM `get_setup` (public REST API) of three central chains, all `status: done`:
+  `GEN-RunIII2024Summer24wmLHEGS-00217` → `GEN-RunIII2024Summer24DRPremix-00308` →
+  `GEN-RunIII2024Summer24MiniAODv6-00258` → `GEN-RunIII2024Summer24NanoAODv15-00258`
+  (TTto2L2Nu-2Jets amcatnloFXFX, 200M events); `GEN-RunIII2024Summer24wmLHEGS-00213` →
+  `GEN-RunIII2024Summer24DRPremix-00455` (TTto2L2Nu-3Jets MLM, 300M); `GEN-RunIII2024Summer24DRPremix-00054`
+  (QCD-4Jets HT-100to200, 120M). All three agree on everything except the release: GS and DR
+  `--conditions 140X_mcRun3_2024_realistic_v26`, `--era Run3_2024`, GS `--beamspot DBrealistic` (the
+  2024 vertex smearing comes from the GT's beamspot, not a named `Realistic25ns...` scenario), premix
+  `--procModifiers premix_stage2 --datamix PreMix --step DIGI,DATAMIX,L1,DIGI2RAW,HLT:2024v14`,
+  `--pileup_input dbs:/Neutrino_E-10_gun/RunIIISummer24PrePremix-Premixlib2024_140X_mcRun3_2024_realistic_v26-v1/PREMIX`,
+  RECO `--step RAW2DIGI,L1Reco,RECO,RECOSIM` with **no procModifiers** and **no AODSIM `outputCommands`
+  customisation** (default AODSIM, unlike Summer23), all `el8_amd64_gcc12`. Downstream central tiers:
+  MiniAODv6 (PAT) and NanoAODv15 in CMSSW_15_0_2 at `150X_mcRun3_2024_realistic_v2`; the earlier
+  14_0 MiniAOD/NanoAOD round (`GEN-RunIII2024Summer24NanoAOD-00285`, 14_0_21_patch4) used
+  `140X_mcRun3_2024_realistic_v26`.
+  **Release caveat:** the DR release varies across central requests: 14_0_21 (`-00308`, and both GS
+  requests), 14_0_21_patch4 (`-00455`), 14_0_19 (`-00054`); a DAS `release dataset=` survey of 40
+  random 2024 DRPremix AODSIM datasets (of 3575) found 14_0_19 … 14_0_24_patch1, with 14_0_21 carrying
+  most of the events (8 datasets, 200M events of the sampled 246M). We use CMSSW_14_0_21 for GS and DR
+  (one release, the TTto2L2Nu-2Jets chain's own; the GT carries the conditions).
+  **LLPNanoAOD for 2024:** the 13_0_13 payload cannot open 14_0_X AODSIM (`FileOpenError ... Fatal Root
+  Error: @SUB=TList::Clear` from PoolSource, tested on a central 2024 AODSIM file), and no
+  `cms-sidm/LLPNanoAOD` branch has a 2024 year. 2024 therefore runs the same code
+  (`LLPnanoAODv1_Run3_devel` 164e620 + the same RecoVertex/PhysicsTools corrections, whose stock files are
+  identical in 13_0_13 and 14_0_21) built in CMSSW_14_0_21, with `year=2024` → `Run3_2024`,
+  `140X_mcRun3_2024_realistic_v26` and the 13_0-only `process.options` `FailPath`/`SkipEvent` dropped
+  (`sidm_run3_production/llpnano_2024/`). Its standard-NANO part is the 14_0 (NanoAODv14) schema: e.g.
+  `MET_*` is `PFMET_*`, `Muon_mvaTTH`/`Electron_mvaTTH` are gone; the LLP content (`DSAMuon`, `Muon_dsaMatch*`,
+  the muon-vertex tables, `BS`, `GenPart_v*`) has the same branches as 2023BPix.
 - **Beamspot / `--era`** (not in the table above): `Realistic25ns13p6TeVEarly2022Collision` with
   `--era Run3` for 2022/22EE; `Realistic25ns13p6TeVEarly2023Collision` with `--era Run3_2023` for
-  2023/23BPix — the standard per-era values, as in central production and the reference implementation.
+  2023/23BPix; `DBrealistic` with `--era Run3_2024` for 2024 — the standard per-era values, as in central
+  production and the reference implementation.
 
 ## The fragment — `data/fragments/SIDM_BsTo2DpTo4l_TuneCP5_13p6TeV_cff.py`
 = the **Run 2 SIDM** genproductions fragment with these changes:

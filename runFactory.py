@@ -60,6 +60,8 @@ class SubmitFactory:
             return "2022"
         elif "23" in name:
             return "2023"
+        elif "24" in name:
+            return "2024"
         return None
 
     def __parse_mass(self):

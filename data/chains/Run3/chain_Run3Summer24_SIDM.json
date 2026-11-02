@@ -1,0 +1,70 @@
+{
+ "STEPS": [
+  "Run3Summer24GENSIM",
+  "Run3Summer24DIGIPremix",
+  "Run3Summer24RECO"
+ ],
+ "KEEPS": [
+  "Run3Summer24RECO"
+ ],
+ "WORKFLOWS": {
+  "Run3Summer24GENSIM": {
+   "SCRAM_ARCH": "el8_amd64_gcc12",
+   "CMSSW_VERSION": "CMSSW_14_0_21",
+   "CUSTOMIZES": {
+    "files": [],
+    "pre-cmsRun": [],
+    "post-cmsRun": []
+   },
+   "OPTIONS": {
+    "eventcontent": "RAWSIM",
+    "datatier": "GEN-SIM",
+    "conditions": "140X_mcRun3_2024_realistic_v26",
+    "beamspot": "DBrealistic",
+    "step": "LHE,GEN,SIM",
+    "geometry": "DB:Extended",
+    "era": "Run3_2024",
+    "mc": null
+   }
+  },
+  "Run3Summer24DIGIPremix": {
+   "SCRAM_ARCH": "el8_amd64_gcc12",
+   "CMSSW_VERSION": "CMSSW_14_0_21",
+   "CUSTOMIZES": {
+    "files": [],
+    "pre-cmsRun": [],
+    "post-cmsRun": []
+   },
+   "OPTIONS": {
+    "eventcontent": "PREMIXRAW",
+    "datatier": "GEN-SIM-RAW",
+    "conditions": "140X_mcRun3_2024_realistic_v26",
+    "step": "DIGI,DATAMIX,L1,DIGI2RAW,HLT:2024v14",
+    "procModifiers": "premix_stage2",
+    "geometry": "DB:Extended",
+    "datamix": "PreMix",
+    "era": "Run3_2024",
+    "pileup_input": "dbs:/Neutrino_E-10_gun/RunIIISummer24PrePremix-Premixlib2024_140X_mcRun3_2024_realistic_v26-v1/PREMIX",
+    "mc": null
+   }
+  },
+  "Run3Summer24RECO": {
+   "SCRAM_ARCH": "el8_amd64_gcc12",
+   "CMSSW_VERSION": "CMSSW_14_0_21",
+   "CUSTOMIZES": {
+    "files": [],
+    "pre-cmsRun": [],
+    "post-cmsRun": []
+   },
+   "OPTIONS": {
+    "eventcontent": "AODSIM",
+    "datatier": "AODSIM",
+    "conditions": "140X_mcRun3_2024_realistic_v26",
+    "step": "RAW2DIGI,L1Reco,RECO,RECOSIM",
+    "geometry": "DB:Extended",
+    "era": "Run3_2024",
+    "mc": null
+   }
+  }
+ }
+}
