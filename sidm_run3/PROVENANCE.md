@@ -182,3 +182,45 @@ physics the reference implementation validated carries over unchanged. Exact com
 `sidm_run3_production/` is the standalone HTCondor chain that actually **produced the 720 signal
 samples** (180 points × 4 eras, 2000 events each) on `lpcmetx` EOS. It encodes the same recipe as the chains above; it
 exists because we ran the full campaign on LPC before expressing it SampleFactory-native.
+
+## v2 production (all five eras, EXONanoAOD) — `sidm_run3_production/chain_job_v2.sh`
+The v1 samples above stay as they are (`run3_samplegen/outputs/<era>/`). v2 re-runs the whole chain with the
+McM campaign definitions as they stood on 2026-11-02 (all updated 2026-07-01) and replaces the LLPNanoAOD step
+with the central EXO PAG custom NanoAOD (EXONanoAOD, `PAT,NANO:@EXO` from AODSIM in one step, `CMSSW_16_0_10`).
+Gridpacks, GEN fragment (13.6 TeV, lifetime via `32:tau0`, **no gen filter**, as v1) and sample names are v1's.
+
+| era | GEN-SIM + DR release | GT (GS/DR) | HLT | premix library (`/Neutrino_E-10_gun/.../PREMIX`) | beamspot | `--era` | procModifiers premix / reco | nano GT (16_0_10) |
+|---|---|---|---|---|---|---|---|---|
+| 2022 | CMSSW_12_4_26 (gcc10) | 124X_mcRun3_2022_realistic_v12 | 2022v12 | Run3Summer21PrePremix-Summer22_124X_mcRun3_2022_realistic_v11-v2 | Realistic25ns13p6TeVEarly2022Collision | Run3 | premix_stage2,siPixelQualityRawToDigi / siPixelQualityRawToDigi | 130X_mcRun3_2022_realistic_v5 |
+| 2022EE | CMSSW_12_4_26 (gcc10) | 124X_mcRun3_2022_realistic_postEE_v1 | 2022v14 | same as 2022 | same as 2022 | Run3 | same as 2022 | 130X_mcRun3_2022_realistic_postEE_v6 |
+| 2023 | CMSSW_13_0_25 (gcc11) | 130X_mcRun3_2023_realistic_v15 | 2023v12 | Run3Summer21PrePremix-Summer23_130X_mcRun3_2023_realistic_v13-v1 | Realistic25ns13p6TeVEarly2023Collision | Run3_2023 | premix_stage2 / none | 130X_mcRun3_2023_realistic_v15 |
+| 2023BPix | CMSSW_13_0_25 (gcc11) | 130X_mcRun3_2023_realistic_postBPix_v6 | 2023v12 | Run3Summer21PrePremix-Summer23BPix_130X_mcRun3_2023_realistic_postBPix_v1-v1 | same as 2023 | Run3_2023 | premix_stage2 / none | 130X_mcRun3_2023_realistic_postBPix_v6 |
+| 2024 | CMSSW_14_0_25 (gcc12) | 140X_mcRun3_2024_realistic_v26 | 2024v14 | RunIIISummer24PrePremix-Premixlib2024_140X_mcRun3_2024_realistic_v26-v1 | DBrealistic | Run3_2024 | premix_stage2 / none | 150X_mcRun3_2024_realistic_v2 |
+
+Nano step, every era: `cmsDriver.py --scenario pp --mc --step PAT,NANO:@EXO --datatier NANOAODSIM --eventcontent
+NANOEDMAODSIM1 --era <era> --conditions <nano GT>` in CMSSW_16_0_10 (el8_amd64_gcc13). The EDM-format nano is then
+flattened exactly as the central NANO merge step does (`Configuration.DataProcessing.Merge.mergeProcess(...,
+mergeNANO=True)`, i.e. `NanoAODOutputModule`); only that flat file is kept. All releases are el8_amd64, so v1's
+`cms:rhel8` container is kept for every step.
+
+**Recipe oracle** (`work/recipe_diff_<era>.txt` in the task record; produced by a dry run of `chain_job_v2.sh`
+with shimmed `cmsDriver.py`, diffed field by field against McM `get_setup`): GS = the newest `done` wmLHEGS request
+created after 2026-07-01 (`EXO-Run3Summer22wmLHEGS-05300`, `EXO-Run3Summer22EEwmLHEGS-05295`,
+`EXO-Run3Summer23wmLHEGS-04353`, `EXO-Run3Summer23BPixwmLHEGS-04353`, `TOP-RunIII2024Summer24wmLHEGS-00254`);
+DR = the newest `done` B2G DRPremix request created after 2026-07-01 (`B2G-Run3Summer22DRPremix-06899`,
+`B2G-Run3Summer22EEDRPremix-07198`, `B2G-Run3Summer23DRPremix-06497`, `B2G-Run3Summer23BPixDRPremix-06500`,
+`B2G-RunIII2024Summer24DRPremix-07498`); 2024 nano = `EXO-RunIII2024Summer24NanoAODv15-06879`. Compared: release,
+arch, conditions, step, era, beamspot, pileup_input, procModifiers, datamix, geometry, customise, eventcontent,
+datatier, scenario. Result: **no difference outside the allowed list** (file names, event counts, nThreads,
+addMonitoring, our RNG `--customise_commands`) in any era. Caveats: (i) the B2G chains' own GS requests are older
+(12_4_25 / 13_0_24), which is why the GS oracle is taken from other requests; requests created before 2026-07-01
+still show the older releases (e.g. newest EXO 2023BPix DRPremix, 13_0_24; newest EXO 2024 DRPremix,
+14_0_24_patch1). (ii) McM has no EXONano request yet for 2022–2023: there the nano reference is the stated
+recipe; its GTs equal those of the newest central NanoAODv12 requests (`EXO-Run3Summer22NanoAODv12-05417`:
+`130X_mcRun3_2022_realistic_v5`; `EXO-Run3Summer23NanoAODv12-04695`: `130X_mcRun3_2023_realistic_v15`).
+
+**EOS layout**: `/store/group/lpcmetx/SIDM/run3_samplegen/outputs_v2/<era>/<sample>/<sample>_<era>_jNNN.root`
+(flat EXONanoAOD); test jobs under `outputs_v2/test/<era>/` (nano + MINIAODSIM). Column: the 36
+`reduced_points.txt` samples × 120 chunks (j000–j039 × 500 + j040–j119 × 1000 events = 100k); grid: the other 144
+points × 4 × 500 events (the column points' j000–j003 are their grid files). Submission: one DAG per era column /
+grid (`make_dag_v2.py`, `RETRY 3`, `condor_submit_dag -maxidle 500 -maxjobs 1500 -notification never`).

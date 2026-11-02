@@ -29,7 +29,7 @@ cleanup(){ cd $WORKDIR 2>/dev/null && rm -f *.root *.tar.xz */src/*.root 2>/dev/
 trap cleanup EXIT
 # the .cksum always exists (condor transfers it back; a missing one would hold the job): FAILED until the upload
 echo "$OUTNAME FAILED start" > $WORKDIR/$CKSUM
-fail(){ echo "### FAIL at $1 (exit $2) ### $(date)"; echo "$OUTNAME FAILED $1 exit=$2" > $WORKDIR/$CKSUM; [ -n "$3" ] && tail -c 20000 "$3" 2>/dev/null | tail -40; exit $2; }
+fail(){ echo "### FAIL at $1 (exit $2) ### $(date)"; echo "$OUTNAME FAILED $1 exit=$2" > $WORKDIR/$CKSUM; [ -n "$3" ] && { sed -n '/Begin Fatal Exception/,/End Fatal Exception/p' "$3" 2>/dev/null | head -60; echo "--- tail of $3:"; tail -c 20000 "$3" 2>/dev/null | tail -20; }; exit $2; }
 # one summary line per cmsRun step, from its framework job report: wall time, events, peak RSS, output size
 stepstat(){ # name fjr outfile
   python3 - "$@" <<'PYEOF'
