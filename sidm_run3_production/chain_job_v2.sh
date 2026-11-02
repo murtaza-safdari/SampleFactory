@@ -164,8 +164,8 @@ cmsDriver.py step3 --scenario pp --mc --step PAT,NANO:@EXO --datatier $DT --even
   --era $ERAMOD --conditions $NANOCOND $MON --nThreads 4 --filein file:$AOD --fileout $FO \
   --python_filename nano_cfg.py --no_exec -n -1 > $WORKDIR/nano_drv.log 2>&1 || fail STEP4_CMSDRIVER $? $WORKDIR/nano_drv.log
 cmsRun -j $WORKDIR/fjr4.xml nano_cfg.py > $WORKDIR/step4.log 2>&1 || fail STEP4_NANO $? $WORKDIR/step4.log
-# the NANOEDM output: step4_nanoedm.root (production) or the second output of the test job (..._inNANOEDMAODSIM1.root)
-NEDM=$(ls step4_nanoedm.root step4_mini_inNANOEDMAODSIM1.root 2>/dev/null | head -1)
+# the NANOEDM output: step4_nanoedm.root (production) or the second output of the test job (step4_mini_inNANOEDMAODSIM.root)
+NEDM=$(ls step4_nanoedm.root step4_mini_inNANOEDMAODSIM*.root 2>/dev/null | head -1)
 [ -n "$NEDM" ] || { echo "FAIL no NANOEDM out"; ls -la *.root; exit 11; }
 stepstat PATNANO $WORKDIR/fjr4.xml $NEDM
 [ "$TEST" = 1 ] && stepstat MINIAOD $WORKDIR/fjr4.xml step4_mini.root
