@@ -1,5 +1,6 @@
 # v2 production node (one chunk = the whole chain for one (point, era, chunk)); used by the make_dag_v2.py DAGs.
-# request_memory = 1.3 x the test jobs' peak RSS rounded up to 0.5 GB; request_disk = 1.5 x the test footprint
+# request_memory: 1.3 x the test jobs' peak RSS (2024: 9500 MB, its PREMIX step peaks at 7.0 GB; others 7500 MB);
+# request_disk = 1.5 x the test footprint
 # (scaled to the 1000-event chunk). Container as the v1 campaign.sub (el8 image; all releases are el8_amd64).
 universe   = vanilla
 executable = chain_job_v2.sh
@@ -9,8 +10,8 @@ when_to_transfer_output = ON_EXIT
 output = logs/$(CHAN)_$(MBs)_$(MDp)_$(CTAU)_$(JOBIDX).$(Cluster).out
 error  = logs/$(CHAN)_$(MBs)_$(MDp)_$(CTAU)_$(JOBIDX).$(Cluster).err
 log    = logs/nodes.$(ERA).log
-transfer_output_files = $(CKSUM)
-transfer_output_remaps = "$(CKSUM) = cksum/$(CKSUM)"
+transfer_output_files = $(CKSUM),$(FAILLOG)
+transfer_output_remaps = "$(CKSUM) = cksum/$(CKSUM); $(FAILLOG) = faillog/$(FAILLOG)"
 request_cpus   = 4
 request_memory = @MEMORY@
 request_disk   = @DISK@

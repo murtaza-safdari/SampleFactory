@@ -18,6 +18,7 @@ EOSP=/store/group/lpcmetx/SIDM/run3_samplegen
 if [ "$TEST" = 1 ]; then ODIR=outputs_v2/test/$ERA/$NAME; else ODIR=outputs_v2/$ERA/$NAME; fi
 OUTNAME=${NAME}_${ERA}_${JOBIDX}.root
 CKSUM=${NAME}_${ERA}_${JOBIDX}.cksum
+FAILLOG=${NAME}_${ERA}_${JOBIDX}.faillog.gz
 WORKDIR=$(pwd)
 echo "######## CHAIN-v2 $NAME  ERA=$ERA NEV=$NEV JOBIDX=$JOBIDX TEST=$TEST ######## $(date)"
 echo "host=$(hostname)  os=$(cat /etc/redhat-release 2>/dev/null)  scratch=$WORKDIR"
@@ -27,9 +28,17 @@ statsize(){ xrdfs root://cmseos.fnal.gov stat "$1" 2>/dev/null | grep -oE 'Size:
 # scratch: condor removes the execute directory at job exit; the big files go earlier, on every exit path
 cleanup(){ cd $WORKDIR 2>/dev/null && rm -f *.root *.tar.xz */src/*.root 2>/dev/null; }
 trap cleanup EXIT
-# the .cksum always exists (condor transfers it back; a missing one would hold the job): FAILED until the upload
+# condor transfers back the .cksum and the .faillog.gz; both always exist (a missing one would hold the job):
+# .cksum says FAILED until the upload; .faillog.gz is empty unless a step fails, then it holds that step's whole
+# log (gzipped, capped at the last 20 MB of text), so the exception block is readable even when TAUOLA's
+# Fortran output flushes after it.
 echo "$OUTNAME FAILED start" > $WORKDIR/$CKSUM
-fail(){ echo "### FAIL at $1 (exit $2) ### $(date)"; echo "$OUTNAME FAILED $1 exit=$2" > $WORKDIR/$CKSUM; [ -n "$3" ] && { sed -n '/Begin Fatal Exception/,/End Fatal Exception/p' "$3" 2>/dev/null | head -60; echo "--- tail of $3:"; tail -c 20000 "$3" 2>/dev/null | tail -20; }; exit $2; }
+: | gzip > $WORKDIR/$FAILLOG
+fail(){ echo "### FAIL at $1 (exit $2) ### $(date)"; echo "$OUTNAME FAILED $1 exit=$2" > $WORKDIR/$CKSUM
+  if [ -n "$3" ] && [ -f "$3" ]; then
+    sed -n '/Begin Fatal Exception/,/End Fatal Exception/p' "$3" | head -60
+    tail -c 20000000 "$3" | gzip > $WORKDIR/$FAILLOG; echo "--- whole $(basename $3) in $FAILLOG ($(stat -c%s $WORKDIR/$FAILLOG) bytes gz)"
+  fi; exit $2; }
 # one summary line per cmsRun step, from its framework job report: wall time, events, peak RSS, output size
 stepstat(){ # name fjr outfile
   python3 - "$@" <<'PYEOF'
@@ -62,12 +71,12 @@ case $ERA in
             BS=Realistic25ns13p6TeVEarly2022Collision; HLT=2022v12; ERAMOD=Run3
             PREMIXMOD=premix_stage2,siPixelQualityRawToDigi; RECOMOD=siPixelQualityRawToDigi
             PU="dbs:/Neutrino_E-10_gun/Run3Summer21PrePremix-Summer22_124X_mcRun3_2022_realistic_v11-v2/PREMIX"
-            NANOCOND=130X_mcRun3_2022_realistic_v5;;
+            NANOCOND=130X_mcRun3_2022_realistic_v5; FIX124=1;;
   2022EE)   REL=CMSSW_12_4_26; ARCH=el8_amd64_gcc10; COND=124X_mcRun3_2022_realistic_postEE_v1
             BS=Realistic25ns13p6TeVEarly2022Collision; HLT=2022v14; ERAMOD=Run3
             PREMIXMOD=premix_stage2,siPixelQualityRawToDigi; RECOMOD=siPixelQualityRawToDigi
             PU="dbs:/Neutrino_E-10_gun/Run3Summer21PrePremix-Summer22_124X_mcRun3_2022_realistic_v11-v2/PREMIX"
-            NANOCOND=130X_mcRun3_2022_realistic_postEE_v6;;
+            NANOCOND=130X_mcRun3_2022_realistic_postEE_v6; FIX124=1;;
   2023)     REL=CMSSW_13_0_25; ARCH=el8_amd64_gcc11; COND=130X_mcRun3_2023_realistic_v15
             BS=Realistic25ns13p6TeVEarly2023Collision; HLT=2023v12; ERAMOD=Run3_2023
             PREMIXMOD=premix_stage2; RECOMOD=
@@ -87,7 +96,17 @@ case $ERA in
 esac
 RECOPM=""; [ -n "$RECOMOD" ] && RECOPM="--procModifiers $RECOMOD"
 MON="--customise Configuration/DataProcessing/Utils.addMonitoring"
-echo "era-config: REL=$REL/$ARCH GT=$COND BS=$BS HLT=$HLT era=$ERAMOD premixmod=$PREMIXMOD recomod=${RECOMOD:-none} nano=$NANOREL/$NANOARCH nanoGT=$NANOCOND"
+# 2022/2022EE only (12_4_X AODSIM read by 16_0_10 EXONano):
+#  RECOOUT: keep the DT 1D / CSC 2D muon rec hits in AODSIM (13_0_X+ AOD content has them by default; the EXONano
+#           dt/cscMDSshower tables need them: ProductNotFound dt1DRecHits otherwise);
+#  NANOFIX: FixMissingStreamerInfos for the 12_4_X HLT scouting classes (cms-sw/cmssw#41348, #45888;
+#           FatalRootError on vector<Run3ScoutingVertex> otherwise).
+RECOOUT=(); NANOFIX=""
+if [ "${FIX124:-0}" = 1 ]; then
+  RECOOUT=(--outputCommands "keep *_dt1DRecHits_*_*,keep *_csc2DRecHits_*_*")
+  NANOFIX="--customise IOPool/Input/fixReading_12_4_X_Files.fixReading_12_4_X_Files"
+fi
+echo "era-config: fix124=${FIX124:-0} REL=$REL/$ARCH GT=$COND BS=$BS HLT=$HLT era=$ERAMOD premixmod=$PREMIXMOD recomod=${RECOMOD:-none} nano=$NANOREL/$NANOARCH nanoGT=$NANOCOND"
 
 # ---- fetch gridpack (ctau-less, per cell) ----
 GPNAME=${GPBASE}_gridpack.tar.xz
@@ -145,7 +164,7 @@ rm -f $GS1 step1_gensim_inLHE.root
 # ================= STEP 3: RECO -> AODSIM =================
 echo "### STEP3 RECO->AODSIM ### $(date)"
 cmsDriver.py step2 --mc --eventcontent AODSIM --datatier AODSIM --conditions $COND \
-  --step RAW2DIGI,L1Reco,RECO,RECOSIM $RECOPM --era $ERAMOD --geometry DB:Extended $MON \
+  --step RAW2DIGI,L1Reco,RECO,RECOSIM $RECOPM --era $ERAMOD --geometry DB:Extended $MON "${RECOOUT[@]}" \
   --nThreads 4 --filein file:step2_premix.root --fileout file:step3_aodsim.root \
   --python_filename reco_cfg.py --no_exec -n -1 > $WORKDIR/reco_drv.log 2>&1 || fail STEP3_CMSDRIVER $? $WORKDIR/reco_drv.log
 cmsRun -j $WORKDIR/fjr3.xml reco_cfg.py > $WORKDIR/step3.log 2>&1 || fail STEP3_RECO $? $WORKDIR/step3.log
@@ -161,7 +180,7 @@ cd $NANOREL/src; eval `scram runtime -sh`
 if [ "$TEST" = 1 ]; then EC=MINIAODSIM,NANOEDMAODSIM1; DT=MINIAODSIM,NANOAODSIM; FO=file:step4_mini.root
 else EC=NANOEDMAODSIM1; DT=NANOAODSIM; FO=file:step4_nanoedm.root; fi
 cmsDriver.py step3 --scenario pp --mc --step PAT,NANO:@EXO --datatier $DT --eventcontent $EC \
-  --era $ERAMOD --conditions $NANOCOND $MON --nThreads 4 --filein file:$AOD --fileout $FO \
+  --era $ERAMOD --conditions $NANOCOND $MON $NANOFIX --nThreads 4 --filein file:$AOD --fileout $FO \
   --python_filename nano_cfg.py --no_exec -n -1 > $WORKDIR/nano_drv.log 2>&1 || fail STEP4_CMSDRIVER $? $WORKDIR/nano_drv.log
 cmsRun -j $WORKDIR/fjr4.xml nano_cfg.py > $WORKDIR/step4.log 2>&1 || fail STEP4_NANO $? $WORKDIR/step4.log
 # the NANOEDM output: step4_nanoedm.root (production) or the second output of the test job (step4_mini_inNANOEDMAODSIM.root)
@@ -194,6 +213,7 @@ bs = {b.GetName() for b in t.GetListOfBranches()}
 need = ["DSAMuon_pt", "DSAMuon_muonMatch1idx", "DSAMuon_nSegments", "DSAMuon_dxyPVSigned", "Muon_pt",
         "Electron_pt", "GenPart_vx", "GenPart_pdgId", "LHEPart_pt"]
 miss = [b for b in need if b not in bs]; nhlt = sum(b.startswith("HLT_") for b in bs)
+miss += [p + "*" for p in ("cscMDSCluster_", "dtMDSCluster_") if not any(b.startswith(p) for b in bs)]
 print("SANITY nEvents=%d GSevents=%d branches=%d HLT_=%d missing=%s" % (t.GetEntries(), ngs, len(bs), nhlt, miss))
 sys.exit(0 if (t.GetEntries() == ngs and ngs > 0 and not miss and nhlt > 0) else 1)
 PYEOF

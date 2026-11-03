@@ -6,7 +6,7 @@
     make_dag_v2.py ERA grid    OUTDIR    # the 180 points_all.txt samples x 2000 events (j000-j003 at 500),
                                          #   minus the 36 column samples, whose j000-j003 the column already made
 
-Writes OUTDIR/<era>_<kind>.dag (JOB/VARS/RETRY 3 per node) and OUTDIR/{logs,cksum}/; put chain_job_v2.sh and
+Writes OUTDIR/<era>_<kind>.dag (JOB/VARS/RETRY 3 per node) and OUTDIR/{logs,cksum,faillog}/; put chain_job_v2.sh and
 prod_v2.sub (memory/disk filled in) next to it, then submit once with
     condor_submit_dag -maxidle 500 -maxjobs 1500 -notification never <era>_<kind>.dag
 """
@@ -43,10 +43,10 @@ def main():
             node = f"{chan}_{mbs}_{mdp.replace('.', 'p')}_{ctau.replace('.', 'p')}_{jidx}"
             ck = f"SIDM_BsTo2DpTo{chan}_MBs-{mbs}_MDp-{mdp.replace('.', 'p')}_ctau-{ctau.replace('.', 'p')}_{era}_{jidx}.cksum"
             lines += [f"JOB {node} prod_v2.sub",
-                      f'VARS {node} MBs="{mbs}" MDp="{mdp}" CHAN="{chan}" CTAU="{ctau}" ERA="{era}" NEV="{nev}" JOBIDX="{jidx}" CKSUM="{ck}" KIND="{kind}"',
+                      f'VARS {node} MBs="{mbs}" MDp="{mdp}" CHAN="{chan}" CTAU="{ctau}" ERA="{era}" NEV="{nev}" JOBIDX="{jidx}" CKSUM="{ck}" FAILLOG="{ck[:-6]}.faillog.gz" KIND="{kind}"',
                       f"RETRY {node} 3"]
             n += 1
-    for sub in ("", "logs", "cksum"):   # condor creates neither the log nor the remap directory
+    for sub in ("", "logs", "cksum", "faillog"):   # condor creates neither the log nor the remap directory
         os.makedirs(os.path.join(outdir, sub), exist_ok=True)
     path = os.path.join(outdir, f"{era}_{kind}.dag")
     open(path, "w").write("\n".join(lines) + "\n")

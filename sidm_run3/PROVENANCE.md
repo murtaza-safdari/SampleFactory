@@ -219,6 +219,22 @@ still show the older releases (e.g. newest EXO 2023BPix DRPremix, 13_0_24; newes
 recipe; its GTs equal those of the newest central NanoAODv12 requests (`EXO-Run3Summer22NanoAODv12-05417`:
 `130X_mcRun3_2022_realistic_v5`; `EXO-Run3Summer23NanoAODv12-04695`: `130X_mcRun3_2023_realistic_v15`).
 
+**2022 / 2022EE additions (12_4_X AODSIM read by the 16_0_10 EXONano)**, neither in any central request because
+McM has no 2022 EXONano flow yet (central 2022 EXO chains still run MiniAODv4 → NanoAODv12; their DR has no output
+customisation, e.g. `EXO-Run3Summer22DRPremix-05903`, `EXO-Run3Summer22EEDRPremix-06467`):
+1. 16_0_10 cannot deserialise the HLT scouting products of 12_4_X AODSIM (`FatalRootError ... TBufferFile::CheckByteCount:
+   object of class vector<Run3ScoutingVertex> read too many bytes`): 12_4_X files lack the StreamerInfo of those classes
+   (cms-sw/cmssw issues 41348, 45888). Fix: the nano step adds `--customise
+   IOPool/Input/fixReading_12_4_X_Files.fixReading_12_4_X_Files` (the `FixMissingStreamerInfos` service).
+2. The EXONano `dtMDSshowerTable` / CSC MDS cluster producers read `dt1DRecHits` / `csc2DRecHits`, which the 12_4_X AOD
+   content keeps only under `bParking` (13_0_X added both to `RecoLocalMuonAOD`, so 2023/2024 AODSIM carry them):
+   `ProductNotFound dt1DRecHits` otherwise. Fix: the RECO step adds `--outputCommands "keep *_dt1DRecHits_*_*,keep
+   *_csc2DRecHits_*_*"` (appended to `AODSIMoutput`), i.e. the 2022 AODSIM gets the 13_0_X muon-rechit content.
+Both are 2022/2022EE only and change no nano content: every era's EXONano carries the same tables (DSAMuon,
+DSAMuonVertex, extended PAT muons, ElectronVertex, DispJet, csc/dtMDSCluster, GenPart vertices). The
+`run3_miniAOD_12X` era modifier is not used (removed from 16_0_10 by cms-sw/cmssw PR 45240). In the recipe diffs these
+two show as `APPROVED` (round 3), no other difference outside the allowed list.
+
 **EOS layout**: `/store/group/lpcmetx/SIDM/run3_samplegen/outputs_v2/<era>/<sample>/<sample>_<era>_jNNN.root`
 (flat EXONanoAOD); test jobs under `outputs_v2/test/<era>/` (nano + MINIAODSIM). Column: the 36
 `reduced_points.txt` samples × 120 chunks (j000–j039 × 500 + j040–j119 × 1000 events = 100k); grid: the other 144
