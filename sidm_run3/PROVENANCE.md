@@ -235,6 +235,26 @@ DSAMuonVertex, extended PAT muons, ElectronVertex, DispJet, csc/dtMDSCluster, Ge
 `run3_miniAOD_12X` era modifier is not used (removed from 16_0_10 by cms-sw/cmssw PR 45240). In the recipe diffs these
 two show as `APPROVED` (round 3), no other difference outside the allowed list.
 
+**Test-job fingerprints** (one 200-event job per era, 200 GeV / 1.2 GeV / 4.8 mm 4Mu; read back from the flat nano
+with `era_fingerprint.provenance()` / `read_file()` of the SIDM analysis repo; references: the v1 samples for
+2022–2023BPix, which use the same premix libraries and beamspots, and a central RunIII2024Summer24 NANO file for 2024):
+
+| era | SIM / HLT / RECO | NANO | HLT menu (HLT_ branches; ref) | ⟨nTrueInt⟩ (ref) | GenVtx x / y / σz cm (ref) | √s median |
+|---|---|---|---|---|---|---|
+| 2022 | 12_4_26, `..._v12` | 16_0_10, `130X_..._2022_realistic_v5` | /frozen/2022/2e34/v1.2/HLT/V1 (754; 754) | 37.2±0.7 (37.5) | 0.1007 / −0.0149 / 3.87 (0.1006 / −0.0150 / 3.81) | 13597 GeV |
+| 2022EE | 12_4_26, `..._postEE_v1` | 16_0_10, `..._postEE_v6` | /frozen/2022/2e34/v1.4/HLT/V1 (616; 616) | 37.3±0.7 (37.4) | 0.1007 / −0.0149 / 4.11 (0.1006 / −0.0150 / 3.81) | 13597 GeV |
+| 2023 | 13_0_25, `..._2023_realistic_v15` | 16_0_10, same GT | /frozen/2023/2e34/v1.2/HLT/V2 (689; v1: 688, menu V1) | 51.3±0.8 (50.9) | 0.0458 / −0.0170 / 3.58 (0.0459 / −0.0170 / 3.61) | 13596 GeV |
+| 2023BPix | 13_0_25, `..._postBPix_v6` | 16_0_10, same GT | /frozen/2023/2e34/v1.2/HLT/V2 (689; v1: 688, menu V1) | 53.2±0.8 (51.3) | 0.0458 / −0.0170 / 3.71 (0.0459 / −0.0170 / 3.59) | 13598 GeV |
+| 2024 | 14_0_25, `140X_..._v26` | 16_0_10, `150X_mcRun3_2024_realistic_v2` | /frozen/2024/2e34/v1.4/HLT/V1 (716; 716) | 44.6±0.7 (45.4) | 0.0285 / −0.0167 / 3.90 (0.0285 / −0.0166 / 3.61) | 13598 GeV |
+
+All five: 200 nano events = 200 GEN-SIM events (no filter), every required branch present (DSAMuon_*, Muon_pt,
+Electron_pt, GenPart_vx/pdgId, LHEPart_pt, cscMDSCluster_*, dtMDSCluster_*), generator comEnergy 13600. The 2023
+menu key `2023v12` resolves in 13_0_25 to `/frozen/2023/2e34/v1.2/HLT/V2` (v1, 13_0_14: `V1`; one more HLT_
+branch). σz and ⟨nTrueInt⟩ agree within 2.3σ of 200-event statistics. Per-step cost (s/event at 4 threads, peak
+RSS): GS 4.2–6.7 s, 1.6 GB; PREMIX 2.2–4.4 s, 5.0–7.0 GB (2024 highest); RECO 2.6–3.6 s, 3.4–3.9 GB; PAT,NANO
+1.4–2.0 s, 3.2 GB. Sizes: flat nano 23–24 kB/event, EDM nano 43–44 kB/event, MINIAODSIM 110–125 kB/event (test only).
+Resources: request_cpus 4, request_memory 9500 MB (2024) / 7500 MB (others), request_disk 4 GB.
+
 **EOS layout**: `/store/group/lpcmetx/SIDM/run3_samplegen/outputs_v2/<era>/<sample>/<sample>_<era>_jNNN.root`
 (flat EXONanoAOD); test jobs under `outputs_v2/test/<era>/` (nano + MINIAODSIM). Column: the 36
 `reduced_points.txt` samples × 120 chunks (j000–j039 × 500 + j040–j119 × 1000 events = 100k); grid: the other 144
