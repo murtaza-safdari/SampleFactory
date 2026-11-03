@@ -257,6 +257,14 @@ Resources: request_cpus 4, request_memory 9500 MB (2024) / 7500 MB (others), req
 
 **EOS layout**: `/store/group/lpcmetx/SIDM/run3_samplegen/outputs_v2/<era>/<sample>/<sample>_<era>_jNNN.root`
 (flat EXONanoAOD); test jobs under `outputs_v2/test/<era>/` (nano + MINIAODSIM). Column: the 36
-`reduced_points.txt` samples × 120 chunks (j000–j039 × 500 + j040–j119 × 1000 events = 100k); grid: the other 144
-points × 4 × 500 events (the column points' j000–j003 are their grid files). Submission: one DAG per era column /
-grid (`make_dag_v2.py`, `RETRY 3`, `condor_submit_dag -maxidle 500 -maxjobs 1500 -notification never`).
+`reduced_points.txt` samples × 120 chunks (v1's split, kept as v1 for the file layout the analysis tooling knows:
+j000–j039 × 500 + j040–j119 × 1000 events = 100k; not a uniform 120 × 833); grid: all 180 `points_all.txt` points ×
+4 × 500 events, as v1 (for the 36 column points j000–j003 are the column's files: those grid nodes skip on the
+existing-output check, or redo a chunk the column lost).
+**Submission**: one outer DAG, `run3v2.dag` (`make_dag_v2.py outer`), with ten `SUBDAG EXTERNAL` nodes, the five
+era columns then the five era grids, ordered by `PRIORITY` (2024, 2022, 2022EE, 2023, 2023BPix in each group), no
+edges, and `DAGMAN_MAX_JOBS_SUBMITTED = 2` in its `CONFIG`: two sub-DAGs run at a time and the next starts when one
+finishes, on the schedd. Each sub-DAG (`make_dag_v2.py <era> <column|grid>`) has one node per chunk, `RETRY 3`, its
+own `CONFIG` (`DAGMAN_MAX_JOBS_IDLE = 500`, `DAGMAN_MAX_JOBS_SUBMITTED = 1500`), a `NODE_STATUS_FILE` (as does the
+outer DAG; `status.sh` reads progress from these files, not from `condor_q`) and the `+SIDMCampaign = "run3v2"`
+ClassAd on every job. Submitted once: `condor_submit_dag -notification never run3v2.dag`.

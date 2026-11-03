@@ -1,0 +1,23 @@
+# v2 SIDM Run 3 campaign: ten sub-DAGs, two at a time (CONFIG), highest PRIORITY first; no edges.
+CONFIG run3v2.config
+NODE_STATUS_FILE run3v2.status 600
+SUBDAG EXTERNAL 2024_column 2024_column.dag DIR 2024_column
+PRIORITY 2024_column 10
+SUBDAG EXTERNAL 2022_column 2022_column.dag DIR 2022_column
+PRIORITY 2022_column 9
+SUBDAG EXTERNAL 2022EE_column 2022EE_column.dag DIR 2022EE_column
+PRIORITY 2022EE_column 8
+SUBDAG EXTERNAL 2023_column 2023_column.dag DIR 2023_column
+PRIORITY 2023_column 7
+SUBDAG EXTERNAL 2023BPix_column 2023BPix_column.dag DIR 2023BPix_column
+PRIORITY 2023BPix_column 6
+SUBDAG EXTERNAL 2024_grid 2024_grid.dag DIR 2024_grid
+PRIORITY 2024_grid 5
+SUBDAG EXTERNAL 2022_grid 2022_grid.dag DIR 2022_grid
+PRIORITY 2022_grid 4
+SUBDAG EXTERNAL 2022EE_grid 2022EE_grid.dag DIR 2022EE_grid
+PRIORITY 2022EE_grid 3
+SUBDAG EXTERNAL 2023_grid 2023_grid.dag DIR 2023_grid
+PRIORITY 2023_grid 2
+SUBDAG EXTERNAL 2023BPix_grid 2023BPix_grid.dag DIR 2023BPix_grid
+PRIORITY 2023BPix_grid 1
