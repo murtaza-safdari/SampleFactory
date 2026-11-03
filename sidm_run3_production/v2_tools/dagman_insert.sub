@@ -1,0 +1,2 @@
+# inserted into every sub-DAGMan job: the LPC schedd requires a DesiredOS (or an Apptainer image) on every job
++DesiredOS = "EL9"

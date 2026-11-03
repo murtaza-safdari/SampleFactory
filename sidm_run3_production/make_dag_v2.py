@@ -14,7 +14,13 @@ A sub-DAG dir gets <era>_<kind>.dag (JOB/VARS/RETRY 3 per node, its own CONFIG a
 request_memory / request_disk filled in, a copy of chain_job_v2.sh, and logs/ cksum/ faillog/.
 The outer DAG (own CONFIG: DAGMAN_MAX_JOBS_SUBMITTED = 2, so two sub-DAGs run at a time; PRIORITY sets the order:
 the five columns, then the five grids, 2024 first) is submitted once:
-    cd TOPDIR && condor_submit_dag -notification never run3v2.dag
+    cd TOPDIR && _CONDOR_DAGMAN_INSERT_SUB_FILE=$PWD/dagman_insert.sub condor_submit_dag -notification never run3v2.dag
+The LPC schedd rejects any job without a DesiredOS or an Apptainer image. condor_submit on a login node adds the
+client's DesiredOS = "EL9", but the outer DAGMan submits the sub-DAGMan jobs on the schedd without it ("Please
+specify a valid DesiredOS"). dagman_insert.sub (+DesiredOS = "EL9") reaches those jobs through
+DAGMAN_INSERT_SUB_FILE: set in the environment at submit time, passed on by DAGMan's getenv = _CONDOR_*, read by
+the recursive condor_submit_dag -no_submit that writes each sub-DAG's .condor.sub. (condor_submit_dag does not read
+that knob from a DAG's CONFIG file.)
 A sub-DAG that was run before starts from its rescue DAG (DAGMan's default), and chain_job_v2.sh skips any chunk whose
 output is already on EOS.
 """
@@ -82,6 +88,9 @@ def outer(topdir):
         assert os.path.exists(os.path.join(topdir, name, f"{name}.dag")), f"missing sub-DAG {name}"
         lines += [f"SUBDAG EXTERNAL {name} {name}.dag DIR {name}", f"PRIORITY {name} {len(order) - i}"]
     open(os.path.join(topdir, "run3v2.dag"), "w").write("\n".join(lines) + "\n")
+    open(os.path.join(topdir, "dagman_insert.sub"), "w").write(
+        "# inserted into every sub-DAGMan job: the LPC schedd requires a DesiredOS (or an Apptainer image) on every job\n"
+        '+DesiredOS = "EL9"\n')
     open(os.path.join(topdir, "run3v2.config"), "w").write(
         "# outer DAG: two sub-DAGs (DAGMan jobs) at a time; the next starts when one finishes\n"
         "DAGMAN_MAX_JOBS_SUBMITTED = 2\n")

@@ -267,4 +267,7 @@ edges, and `DAGMAN_MAX_JOBS_SUBMITTED = 2` in its `CONFIG`: two sub-DAGs run at 
 finishes, on the schedd. Each sub-DAG (`make_dag_v2.py <era> <column|grid>`) has one node per chunk, `RETRY 3`, its
 own `CONFIG` (`DAGMAN_MAX_JOBS_IDLE = 500`, `DAGMAN_MAX_JOBS_SUBMITTED = 1500`), a `NODE_STATUS_FILE` (as does the
 outer DAG; `status.sh` reads progress from these files, not from `condor_q`) and the `+SIDMCampaign = "run3v2"`
-ClassAd on every job. Submitted once: `condor_submit_dag -notification never run3v2.dag`.
+ClassAd on every job. Submitted once: `_CONDOR_DAGMAN_INSERT_SUB_FILE=$PWD/dagman_insert.sub condor_submit_dag
+-notification never run3v2.dag`. The LPC schedd rejects jobs with neither a DesiredOS nor an Apptainer image; the
+sub-DAGMan jobs that the outer DAGMan submits on the schedd get `+DesiredOS = "EL9"` (the login client's default)
+from `dagman_insert.sub`, which reaches the recursive `condor_submit_dag` through DAGMan's `getenv = _CONDOR_*`.
