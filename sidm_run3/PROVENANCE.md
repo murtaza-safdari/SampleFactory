@@ -71,16 +71,20 @@ Two per-era points worth calling out (both verified against central production):
 - **added** `SLHA:useDecayTable=off` + `32:tauCalc=off` (robustness — the lifetime is set by `32:tau0`,
   exactly as in Run 2 SIDM and Sunil's fragments; these two lines stop the gridpack's embedded
   `DECAY 32` width from silently overriding it) + `32:mayDecay=on`,
-- **settings-block difference**: the Run 2 fragment included `pythia8aMCatNLOSettingsBlock` (aMC@NLO
-  shower-matching settings: restricted shower starting scale, `MEcorrections=off`, global recoil);
-  this fragment instead includes `pythia8PSweightsSettingsBlock` (parton-shower variation weights).
-  The matching block targets NLO/aMC@NLO LHE input; these gridpacks are LO. Measured impact vs the
-  2018 v10 samples (200 GeV / 1.2 GeV point): the dark-photon pT is ~6% softer at the median
-  (KS D = 0.13) with correspondingly ~10% softer lepton pT and wider lepton-pair ΔR, and a slightly
-  larger FSR tail (m(ll) < 0.95 m_Zd: 32% → 38%); masses, proper lifetime, and channel composition
-  are unaffected. A few-percent ISR-recoil shape effect of this kind is absorbed by computing
-  efficiencies on the Run 3 samples themselves (never transporting 2018 efficiencies). Kept as-is
-  for the produced samples; revisit consciously before any future mass production.
+- **settings blocks**: `pythia8CommonSettings`, `pythia8CP5Settings`, `pythia8PSweightsSettings`
+  (parton-shower variation weights) and `processParameters`. The public Run 2 genproductions fragment
+  (`genfragments/ThirteenTeV/SIDM/SIDM_BsTo2DpTo4l_ctau-XXX_TuneCP5_13TeV_pythia8_cff.py`) lists
+  `pythia8aMCatNLOSettings` instead of the PS-weights block, but the 2018 v10 samples the analysis
+  uses were not produced from it: the generator configuration stored in a v10 file (edmProvDump,
+  2026-11-04) carries exactly the four blocks above and no matching block (no `pTmaxMatch` lines).
+  The shower settings of this fragment therefore match the v10 samples. An earlier version of this
+  note attributed a ~6% softer dark-photon pT and ~10% softer lepton pT (200 GeV / 1.2 GeV point) to
+  a missing matching block; that comparison had not applied the v10 generator filter (>= 4 prompt
+  final-state leptons with pT > 4 GeV and |eta| < 2.4) to the Run 3 side. With the filter emulated on
+  both sides, dark-photon and lepton pT agree to +0.2%, |eta| and the lepton-pair ΔR agree
+  (ΔR −0.3 ± 0.4%), and the mean proper cτ is consistent (SIDM study
+  `sidm/studies/run3_signal_validation`, 2026-11-04). The FSR-tail fraction quoted earlier
+  (m(ll) < 0.95 m_Zd: 32% → 38%) was measured without the filter and has not been re-measured.
 
 **No gen filter** — the Run 3 samples cover the **full lepton phase space**. Note this does NOT
 exactly match the v10 2018 samples: despite their YAML's *"no unwanted gen filters"*, the v10 gen

@@ -10,12 +10,16 @@ import os
 #   * added SLHA:useDecayTable=off + 32:tauCalc=off + 32:mayDecay=on  (robustness: the dark-photon
 #     lifetime is set by 32:tau0 -- exactly as in Run 2 SIDM and in Sunil's fragments -- and the
 #     first two lines stop the gridpack's embedded DECAY-32 width from silently overriding it)
-#   * settings blocks: the Run 2 fragment included pythia8aMCatNLOSettingsBlock (aMC@NLO shower
-#     matching; targets NLO LHE input -- these gridpacks are LO); this fragment carries
-#     pythia8PSweightsSettingsBlock (PS-variation weights) instead. Measured vs 2018 v10: ~6%
-#     softer dark-photon pT (ISR recoil); masses/lifetime/channels unaffected. See PROVENANCE.md.
-# No gen filter: full lepton phase space. NOTE the v10 2018 samples carry lepton acceptance cuts
-# (|eta|<2.4 and pT>~1 GeV, measured); apply those to these samples when comparing to v10. Sunil's
+#   * settings blocks: pythia8CommonSettings, pythia8CP5Settings, pythia8PSweightsSettings
+#     (PS-variation weights) and processParameters. The public Run 2 genproductions fragment lists
+#     pythia8aMCatNLOSettings instead of the PS-weights block, but the 2018 v10 samples the analysis
+#     uses were not made from it: their stored generator configuration (edmProvDump, 2026-11-04)
+#     carries exactly these four blocks and no matching block. The shower settings therefore match
+#     v10. See PROVENANCE.md.
+# No gen filter: full lepton phase space. NOTE the v10 2018 samples carry a generator filter
+# (edmProvDump): >= 4 prompt final-state hard-process leptons (e or mu, last copy) with pT > 4 GeV,
+# |eta| < 2.4, production vertex rho < 740 cm and |z| < 960 cm. Emulate it on these samples when
+# comparing to v10 (SIDM: sidm/studies/run3_signal_validation/gen_requirement.py). Sunil's
 # Run 3 fragments add a >=4-lepton acceptance filter; we deliberately omit any filter.
 #
 # GRIDPACK (tarball path) and CTAU (dark-photon proper ctau in mm) are supplied per job via
