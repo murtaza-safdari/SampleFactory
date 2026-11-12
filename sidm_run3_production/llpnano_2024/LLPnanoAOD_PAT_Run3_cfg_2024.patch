@@ -1,0 +1,39 @@
+--- a/LLPnanoAOD/test/LLPnanoAOD_PAT_Run3_cfg.py
++++ b/LLPnanoAOD/test/LLPnanoAOD_PAT_Run3_cfg.py
+@@ -8,6 +8,7 @@
+ 
+ from Configuration.Eras.Era_Run3_cff import Run3
+ from Configuration.Eras.Era_Run3_2023_cff import Run3_2023
++from Configuration.Eras.Era_Run3_2024_cff import Run3_2024
+ 
+ # Input arguments
+ options = VarParsing('analysis')
+@@ -96,6 +97,8 @@
+         process = cms.Process('NANO',Run3_2023)
+     if options.year == "2023PostBPix":
+         process = cms.Process('NANO',Run3_2023) 
++    if options.year == "2024":
++        process = cms.Process('NANO',Run3_2024)
+ 
+ # import of standard configurations
+ process.load('Configuration.StandardSequences.Services_cff')
+@@ -127,10 +130,8 @@
+ )
+ 
+ process.options = cms.untracked.PSet(
+-    FailPath = cms.untracked.vstring(),
+     IgnoreCompletely = cms.untracked.vstring(),
+     Rethrow = cms.untracked.vstring(),
+-    SkipEvent = cms.untracked.vstring(),
+     accelerators = cms.untracked.vstring('*'),
+     allowUnscheduled = cms.obsolete.untracked.bool,
+     canDeleteEarly = cms.untracked.vstring(),
+@@ -205,6 +206,8 @@
+         globalTag = GlobalTag(process.GlobalTag, '130X_mcRun3_2023_realistic_v14', '')
+     if options.year == "2023PostBPix":
+         globalTag = GlobalTag(process.GlobalTag, '130X_mcRun3_2023_realistic_postBPix_v2', '')
++    if options.year == "2024":
++        globalTag = GlobalTag(process.GlobalTag, '140X_mcRun3_2024_realistic_v26', '')
+ process.GlobalTag = globalTag
+ 
+ 

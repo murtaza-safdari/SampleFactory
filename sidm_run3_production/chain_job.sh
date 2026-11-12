@@ -1,10 +1,13 @@
 #!/bin/bash
-# chain_job.sh  MBs  MDp  CHAN  CTAU  ERA  NEV  JOBIDX
+# chain_job.sh  MBs  MDp  CHAN  CTAU  ERA  NEV  JOBIDX  [MODE]
 # Full Run3 SIDM signal chain on a Condor worker (el8 image, self-contained in scratch):
 #   xrdcp gridpack -> GEN-SIM -> premix -> RECO/AODSIM -> custom LLPNanoAOD -> xrdcp nano to EOS.
+# MODE=nano (default) uploads the LLPNanoAOD to outputs/<era>/; MODE=aod stops after RECO and uploads
+# the AODSIM to outputs/<era>_aodsim/ (same file name), so the nano step can be run on it later.
 # Workers do NOT mount /uscms_data: every input comes via xrdcp from EOS; cvmfs for stock releases.
 # One gridpack per (MBs,MDp,channel) serves all 5 ctau (Pythia 32:tau0 sets ctau; gridpack width ignored).
-MBs=$1; MDp=$2; CHAN=$3; CTAU=$4; ERA=$5; NEV=$6; JOBIDX=$7
+MBs=$1; MDp=$2; CHAN=$3; CTAU=$4; ERA=$5; NEV=$6; JOBIDX=$7; MODE=${8:-nano}
+case $MODE in nano) ODIR=$ERA;; aod) ODIR=${ERA}_aodsim;; *) echo "FATAL: unknown MODE=$MODE"; exit 2;; esac
 MDpT=$(echo $MDp | sed 's/\./p/'); CTAUT=$(echo $CTAU | sed 's/\./p/')
 NAME=SIDM_BsTo2DpTo${CHAN}_MBs-${MBs}_MDp-${MDpT}_ctau-${CTAUT}     # per-point (ctau in name -> output only)
 GPBASE=SIDM_BsTo2DpTo${CHAN}_MBs-${MBs}_MDp-${MDpT}                 # per-cell (ctau-less -> gridpack)
@@ -12,7 +15,7 @@ EOS=root://cmseos.fnal.gov//store/group/lpcmetx/SIDM/run3_samplegen
 EOSP=/store/group/lpcmetx/SIDM/run3_samplegen
 OUTNAME=${NAME}_${ERA}_${JOBIDX}.root
 WORKDIR=$(pwd)
-echo "######## CHAIN $NAME  ERA=$ERA NEV=$NEV JOBIDX=$JOBIDX ######## $(date)"
+echo "######## CHAIN $NAME  ERA=$ERA NEV=$NEV JOBIDX=$JOBIDX MODE=$MODE ######## $(date)"
 echo "host=$(hostname)  os=$(cat /etc/redhat-release 2>/dev/null)  scratch=$WORKDIR"
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
@@ -20,15 +23,18 @@ statsize(){ xrdfs root://cmseos.fnal.gov stat "$1" 2>/dev/null | grep -oE 'Size:
 fail(){ echo "### FAIL at $1 (exit $2) ### $(date)"; [ -n "$3" ] && tail -40 "$3" 2>/dev/null; exit $2; }
 
 # ---- idempotency: skip if a good output already exists on EOS ----
-EXIST=$(statsize $EOSP/outputs/$ERA/$NAME/$OUTNAME)
+EXIST=$(statsize $EOSP/outputs/$ODIR/$NAME/$OUTNAME)
 if [ -n "$EXIST" ] && [ "$EXIST" -gt 100000 ]; then
-  echo "### SKIP: output already exists ($EXIST bytes) -> $EOSP/outputs/$ERA/$NAME/$OUTNAME ###"; exit 0
+  echo "### SKIP: output already exists ($EXIST bytes) -> $EOSP/outputs/$ODIR/$NAME/$OUTNAME ###"; exit 0
 fi
 
 # ---- per-era config (McM-grounded: exact central-production recipe per campaign) ----
 # GSREL/GSARCH: GEN-SIM release; DRREL/DRARCH: premix+reco release; COND: global tag (same across GS/DR steps);
 # BS: beamspot; HLT: premix HLT menu; PU: premix pileup dataset; ERAMOD: cmsDriver --era; NYEAR: LLPnano year token.
-# PREMIXMOD/RECOMOD: per-era procModifiers (2022/22EE need siPixelQualityRawToDigi; 2023/23BPix must NOT use it).
+# PREMIXMOD/RECOMOD: per-era procModifiers (2022/22EE need siPixelQualityRawToDigi; 2023/23BPix/2024 must NOT use it).
+# NANOREL/NANOARCH: the prebuilt LLPNanoAOD release (payload_<NANOREL>.tar.gz on EOS); 13_0_13 cannot read
+# 14_0_X (2024) AODSIM, so 2024 has its own build.
+NANOREL=CMSSW_13_0_13; NANOARCH=el8_amd64_gcc11
 case $ERA in
   2022)     GSREL=CMSSW_12_4_19;        GSARCH=el8_amd64_gcc10; DRREL=CMSSW_12_4_16;        DRARCH=el8_amd64_gcc10
             COND=124X_mcRun3_2022_realistic_v12;             BS=Realistic25ns13p6TeVEarly2022Collision; HLT=2022v12; ERAMOD=Run3
@@ -46,10 +52,15 @@ case $ERA in
             COND=130X_mcRun3_2023_realistic_postBPix_v6;     BS=Realistic25ns13p6TeVEarly2023Collision; HLT=2023v12; ERAMOD=Run3_2023
             PREMIXMOD=premix_stage2; RECOMOD=
             PU="dbs:/Neutrino_E-10_gun/Run3Summer21PrePremix-Summer23BPix_130X_mcRun3_2023_realistic_postBPix_v1-v1/PREMIX"; NYEAR=2023PostBPix;;
+  2024)     GSREL=CMSSW_14_0_21;        GSARCH=el8_amd64_gcc12; DRREL=CMSSW_14_0_21;        DRARCH=el8_amd64_gcc12
+            COND=140X_mcRun3_2024_realistic_v26;             BS=DBrealistic; HLT=2024v14; ERAMOD=Run3_2024
+            PREMIXMOD=premix_stage2; RECOMOD=
+            PU="dbs:/Neutrino_E-10_gun/RunIIISummer24PrePremix-Premixlib2024_140X_mcRun3_2024_realistic_v26-v1/PREMIX"; NYEAR=2024
+            NANOREL=CMSSW_14_0_21; NANOARCH=el8_amd64_gcc12;;
   *) echo "FATAL: unknown ERA=$ERA"; exit 2;;
 esac
 RECOPM=""; [ -n "$RECOMOD" ] && RECOPM="--procModifiers $RECOMOD"
-echo "era-config: GS=$GSREL/$GSARCH DR=$DRREL/$DRARCH GT=$COND HLT=$HLT era=$ERAMOD premixmod=$PREMIXMOD recomod=${RECOMOD:-none} nano-year=$NYEAR"
+echo "era-config: GS=$GSREL/$GSARCH DR=$DRREL/$DRARCH GT=$COND HLT=$HLT era=$ERAMOD premixmod=$PREMIXMOD recomod=${RECOMOD:-none} nano-year=$NYEAR nano-rel=$NANOREL"
 
 # ---- fetch gridpack (ctau-less, per cell) ----
 GPNAME=${GPBASE}_gridpack.tar.xz
@@ -115,13 +126,31 @@ cmsDriver.py step2 --mc --eventcontent AODSIM --datatier AODSIM --conditions $CO
 cmsRun reco_cfg.py > $WORKDIR/step3.log 2>&1 || fail STEP3_RECO $? $WORKDIR/step3.log
 AOD=$(pwd)/step3_aodsim.root; ls -la $AOD || { echo "FAIL no aodsim out"; exit 8; }
 
-# ================= STEP 4: custom LLPNanoAOD (prebuilt CMSSW_13_0_13 payload) =================
-echo "### STEP4 fetch+unpack LLPNanoAOD payload ### $(date)"
+if [ "$MODE" = aod ]; then
+# ---- MODE=aod: upload the AODSIM itself; sanity = openable, non-empty Events tree ----
+python3 - "$AOD" > $WORKDIR/sanity.txt 2>&1 <<'PYEOF'
+import sys, ROOT
+f=ROOT.TFile.Open(sys.argv[1])
+if not f or f.IsZombie(): print("SANITY FAIL: cannot open"); sys.exit(1)
+t=f.Get("Events")
+if not t: print("SANITY FAIL: no Events tree"); sys.exit(1)
+print("SANITY AODSIM nEvents=%d"%t.GetEntries())
+sys.exit(0 if t.GetEntries()>0 else 1)
+PYEOF
+SRC=$?
+cat $WORKDIR/sanity.txt
+[ "$SRC" -eq 0 ] || fail STEP3_SANITY "$SRC" $WORKDIR/sanity.txt
+UPLOAD=$AOD
+else
+# ================= STEP 4: custom LLPNanoAOD (prebuilt $NANOREL payload) =================
+echo "### STEP4 fetch+unpack LLPNanoAOD payload ($NANOREL) ### $(date)"
 cd $WORKDIR
-xrdcp -f -N $EOS/payload/payload_CMSSW_13_0_13.tar.gz payload.tar.gz || { echo "FAIL payload xrdcp"; exit 9; }
+# a payload shipped with the job (condor transfer_input_files) takes precedence over the EOS copy
+if [ -f payload_${NANOREL}.tar.gz ]; then cp payload_${NANOREL}.tar.gz payload.tar.gz
+else xrdcp -f -N $EOS/payload/payload_${NANOREL}.tar.gz payload.tar.gz || { echo "FAIL payload xrdcp"; exit 9; }; fi
 tar xzf payload.tar.gz || { echo "FAIL untar payload"; exit 10; }
-export SCRAM_ARCH=el8_amd64_gcc11
-cd CMSSW_13_0_13; scram b ProjectRename > $WORKDIR/rename.log 2>&1 || fail STEP4_RENAME $? $WORKDIR/rename.log
+export SCRAM_ARCH=$NANOARCH
+cd $NANOREL; scram b ProjectRename > $WORKDIR/rename.log 2>&1 || fail STEP4_RENAME $? $WORKDIR/rename.log
 cd src; eval `scram runtime -sh`
 CFG=LLPNanoAOD/LLPnanoAOD/test/LLPnanoAOD_PAT_Run3_cfg.py
 [ -f "$CFG" ] || CFG=$(ls LLPNanoAOD/LLPnanoAOD/test/*PAT*Run3*cfg.py 2>/dev/null | head -1)
@@ -151,13 +180,15 @@ SRC=$?
 cat $WORKDIR/sanity.txt
 # HARD FAIL on unopenable / no Events tree / 0 events / missing Runs (broken genEventSumw) -- the python exits 1 in all those cases
 [ "$SRC" -eq 0 ] || fail STEP4_SANITY "$SRC" $WORKDIR/sanity.txt
+UPLOAD=$NANO
+fi
 
-# ================= STEP 5: xrdcp nano to EOS (with size verify) =================
-echo "### STEP5 xrdcp -> $EOSP/outputs/$ERA/$NAME/$OUTNAME ### $(date)"
-xrdfs root://cmseos.fnal.gov mkdir -p $EOSP/outputs/$ERA/$NAME 2>/dev/null
+# ================= STEP 5: xrdcp output to EOS (with size verify) =================
+echo "### STEP5 xrdcp -> $EOSP/outputs/$ODIR/$NAME/$OUTNAME ### $(date)"
+xrdfs root://cmseos.fnal.gov mkdir -p $EOSP/outputs/$ODIR/$NAME 2>/dev/null
 # --posc: persist-on-successful-close, so a failed/interrupted transfer leaves no partial file
 # on EOS (which the >100KB idempotency skip would otherwise permanently bless on resubmit).
-xrdcp -f -N --posc "$NANO" $EOS/outputs/$ERA/$NAME/$OUTNAME || { echo "FAIL nano xrdcp"; xrdfs root://cmseos.fnal.gov rm $EOSP/outputs/$ERA/$NAME/$OUTNAME 2>/dev/null; exit 12; }
-LSIZE=$(stat -c%s "$NANO"); RSIZE=$(statsize $EOSP/outputs/$ERA/$NAME/$OUTNAME)
-[ "$LSIZE" = "$RSIZE" ] || { echo "FAIL xrdcp size mismatch local=$LSIZE remote=$RSIZE"; xrdfs root://cmseos.fnal.gov rm $EOSP/outputs/$ERA/$NAME/$OUTNAME 2>/dev/null; exit 13; }
-echo "######## CHAIN DONE ($RSIZE bytes) -> $EOSP/outputs/$ERA/$NAME/$OUTNAME ######## $(date)"
+xrdcp -f -N --posc "$UPLOAD" $EOS/outputs/$ODIR/$NAME/$OUTNAME || { echo "FAIL output xrdcp"; xrdfs root://cmseos.fnal.gov rm $EOSP/outputs/$ODIR/$NAME/$OUTNAME 2>/dev/null; exit 12; }
+LSIZE=$(stat -c%s "$UPLOAD"); RSIZE=$(statsize $EOSP/outputs/$ODIR/$NAME/$OUTNAME)
+[ "$LSIZE" = "$RSIZE" ] || { echo "FAIL xrdcp size mismatch local=$LSIZE remote=$RSIZE"; xrdfs root://cmseos.fnal.gov rm $EOSP/outputs/$ODIR/$NAME/$OUTNAME 2>/dev/null; exit 13; }
+echo "######## CHAIN DONE ($RSIZE bytes) -> $EOSP/outputs/$ODIR/$NAME/$OUTNAME ######## $(date)"

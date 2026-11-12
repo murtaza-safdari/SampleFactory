@@ -20,7 +20,7 @@ GeV × 3 dark-photon masses `M_Zd ∈ {0.25,1.2,5.0}` GeV × 5 cτ per cell = 90
 **180 points**. The cτ value list per (M_Bs, M_Zd) cell is the 2018 v10 grid (the sample keys in
 `points_all.txt`); the analysis `sidm/configs/signal_grid.yaml` holds the per-cell proper-to-lab-frame
 conversion factors, not the cτ values themselves.
-Four Run 3 eras: 2022 (pre-EE), 2022EE (post-EE), 2023 (pre-BPix), 2023BPix (post-BPix).
+Five Run 3 eras: 2022 (pre-EE), 2022EE (post-EE), 2023 (pre-BPix), 2023BPix (post-BPix), 2024.
 
 ## One gridpack per (M_Bs, M_Zd, channel), reused across cτ
 
@@ -54,11 +54,16 @@ Without `SLHA:useDecayTable = off` + `32:tauCalc = off`, the gridpack's embedded
 | 2022EE   | CMSSW_12_4_11_patch3       | CMSSW_12_4_11_patch3       | 124X_mcRun3_2022_realistic_postEE_v1   | 2022v14 | premix_stage2,siPixelQualityRawToDigi | siPixelQualityRawToDigi | 2022PostEE |
 | 2023     | CMSSW_13_0_17 (gcc11)      | CMSSW_13_0_14 (gcc11)      | 130X_mcRun3_2023_realistic_v14         | 2023v12 | premix_stage2 | (none) | 2023PreBPix  |
 | 2023BPix | CMSSW_13_0_14 (gcc11)      | CMSSW_13_0_14 (gcc11)      | 130X_mcRun3_2023_realistic_postBPix_v6 | 2023v12 | premix_stage2 | (none) | 2023PostBPix |
+| 2024     | CMSSW_14_0_21 (gcc12)      | CMSSW_14_0_21 (gcc12)      | 140X_mcRun3_2024_realistic_v26         | 2024v14 | premix_stage2 | (none) | 2024 |
 
-Beamspot: `Realistic25ns13p6TeVEarly2022Collision` (2022/22EE), `...Early2023Collision` (2023/23BPix).
-`--era Run3` (2022/22EE), `Run3_2023` (2023/23BPix). Premix pileup: the matching Run3Summer21
-PrePremix `Neutrino_E-10_gun` PREMIX dataset per era. The single-step LLPNanoAOD PAT→NANO
-(`year=<...>` hardcodes the corresponding MiniAOD/NANO global tag) runs in the prebuilt CMSSW_13_0_13.
+Beamspot: `Realistic25ns13p6TeVEarly2022Collision` (2022/22EE), `...Early2023Collision` (2023/23BPix),
+`DBrealistic` (2024). `--era Run3` (2022/22EE), `Run3_2023` (2023/23BPix), `Run3_2024` (2024). Premix
+pileup: the matching Run3Summer21 PrePremix `Neutrino_E-10_gun` PREMIX dataset per era
+(`RunIIISummer24PrePremix-Premixlib2024_...` for 2024). The single-step LLPNanoAOD PAT→NANO
+(`year=<...>` hardcodes the corresponding MiniAOD/NANO global tag) runs in the prebuilt CMSSW_13_0_13 for
+2022–2023 and in CMSSW_14_0_21 for 2024 (13_0_13 cannot read 14_0 AODSIM; build it with
+`llpnano_2024/build_payload_CMSSW_14_0_21.sh`). `chain_job.sh` takes an optional 8th argument `MODE`:
+`nano` (default) or `aod`, which stops after RECO and uploads the AODSIM to `outputs/<era>_aodsim/`.
 
 **Important:** 2023/2023BPix RECO must NOT use the 2022 `siPixelQualityRawToDigi` procModifier — it
 raises `NoProxyException: SiPixelQuality forRawToDigi`. 2023 uses `premix_stage2` only (premix) and

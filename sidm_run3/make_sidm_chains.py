@@ -12,7 +12,7 @@ import json, sys, os
 OUT = sys.argv[1] if len(sys.argv) > 1 else "."
 
 # Per-era conditions -- all McM-verified against real central DRPremix datasets (and cross-checked
-# vs Sunil's smdogra/SiDM run3TarBallMiniAOD). recomod="" for 2023/23BPix (they must NOT carry the
+# vs Sunil's smdogra/SiDM run3TarBallMiniAOD). recomod="" for 2023/23BPix/2024 (they must NOT carry the
 # 2022 siPixelQualityRawToDigi reco procModifier). Note 2022EE uses the Summer22 (non-EE) premix.
 ERAS = {
  "Run3Summer22": dict(
@@ -35,6 +35,12 @@ ERAS = {
    gt="130X_mcRun3_2023_realistic_postBPix_v6", bs="Realistic25ns13p6TeVEarly2023Collision",
    hlt="2023v12", era="Run3_2023", premixmod="premix_stage2", recomod="",
    pu="dbs:/Neutrino_E-10_gun/Run3Summer21PrePremix-Summer23BPix_130X_mcRun3_2023_realistic_postBPix_v1-v1/PREMIX"),
+ # 2024 = central RunIII2024Summer24 (wmLHEGS / DRPremix); beamspot from the GT (DBrealistic), no reco procModifiers.
+ "Run3Summer24": dict(
+   gs="CMSSW_14_0_21", gsarch="el8_amd64_gcc12", dr="CMSSW_14_0_21", drarch="el8_amd64_gcc12",
+   gt="140X_mcRun3_2024_realistic_v26", bs="DBrealistic",
+   hlt="2024v14", era="Run3_2024", premixmod="premix_stage2", recomod="",
+   pu="dbs:/Neutrino_E-10_gun/RunIIISummer24PrePremix-Premixlib2024_140X_mcRun3_2024_realistic_v26-v1/PREMIX"),
 }
 
 CUST = {"files": [], "pre-cmsRun": [], "post-cmsRun": []}
