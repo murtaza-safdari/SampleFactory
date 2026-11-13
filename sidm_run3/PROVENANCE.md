@@ -279,3 +279,9 @@ ClassAd on every job. Submitted once: `_CONDOR_DAGMAN_INSERT_SUB_FILE=$PWD/dagma
 -notification never run3v2.dag`. The LPC schedd rejects jobs with neither a DesiredOS nor an Apptainer image; the
 sub-DAGMan jobs that the outer DAGMan submits on the schedd get `+DesiredOS = "EL9"` (the login client's default)
 from `dagman_insert.sub`, which reaches the recursive `condor_submit_dag` through DAGMan's `getenv = _CONDOR_*`.
+
+**Job records**: every v2 job leaves two files that condor transfers back, `<name>_<era>_jNNN.cksum` and
+`<name>_<era>_jNNN.faillog.gz` (`chain_job_v2.sh` lines 31 to 41; `prod_v2.sub`). The header comment of
+`chain_job_v2.sh` (lines 10 and 11) still calls the `.cksum` "the only file condor transfers back"; it predates the
+fail log. The script is kept byte-identical to the one that ran at both sites (md5
+a3af76b526123b1a6999308a8230b9e0), so the comment is corrected here and not in the script.
