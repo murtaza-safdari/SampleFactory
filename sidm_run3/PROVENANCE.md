@@ -119,13 +119,15 @@ Two per-era points worth calling out (both verified against central production):
   (m(ll) < 0.95 m_Zd: 32% → 38%) was measured without the filter and has not been re-measured.
 
 **No gen filter** — the Run 3 samples cover the **full lepton phase space**. Note this does NOT
-exactly match the v10 2018 samples: despite their YAML's *"no unwanted gen filters"*, the v10 gen
-leptons carry acceptance cuts (a hard |η| < 2.4 edge — 0 of 46k measured leptons beyond it — and a
-minimum lepton pT of about 1 GeV), while the Run 3 samples have none (lepton |η| out to ~6, pT to
-~0.1 GeV). Consequences: (i) acceptance/efficiency denominators differ between v10 and Run 3 — a
+exactly match the v10 2018 samples: despite their YAML's *"no unwanted gen filters"*, the v10 GEN
+process carries a generator filter (`genfilter` + `gencount`: at least four prompt final-state leptons
+from the hard process with pT > 4 GeV, |η| < 2.4, production vertex ρ < 740 cm and |z| < 960 cm; 0 of
+46k measured leptons lie beyond |η| = 2.4), while the Run 3 samples have none (lepton |η| out to ~6,
+pT to ~0.1 GeV). Consequences: (i) acceptance/efficiency denominators differ between v10 and Run 3 — a
 Run 3 "per generated event" efficiency is not directly comparable to a v10 one; (ii) for shape
-comparisons, apply |η| < 2.4 (and pT > 1 GeV) to the Run 3 gen leptons first — the validation
-notebook does this explicitly. Sunil's Run 3 fragments add a ≥4-lepton acceptance filter; we omit
+comparisons, apply the v10 filter to the Run 3 gen leptons first — the SIDM study
+`sidm/studies/run3_signal_validation` emulates it in `gen_requirement.py`; 0.58 of the 2022 4Mu events
+at 200 GeV / 1.2 GeV / 4.8 mm pass it. Sunil's Run 3 fragments add a ≥4-lepton acceptance filter; we omit
 any filter. The gridpack path and cτ are per-job environment variables (`GRIDPACK`, `CTAU`), exactly
 as in the IDM fragments.
 
@@ -205,7 +207,9 @@ Nano step, every era: `cmsDriver.py --scenario pp --mc --step PAT,NANO:@EXO --da
 NANOEDMAODSIM1 --era <era> --conditions <nano GT>` in CMSSW_16_0_10 (el8_amd64_gcc13). The EDM-format nano is then
 flattened exactly as the central NANO merge step does (`Configuration.DataProcessing.Merge.mergeProcess(...,
 mergeNANO=True)`, i.e. `NanoAODOutputModule`); only that flat file is kept. All releases are el8_amd64, so v1's
-`cms:rhel8` container is kept for every step.
+`cms:rhel8` container is kept for every step at LPC (`+ApptainerImage`). The same script was also submitted
+from CERN lxplus, where the el8 container is requested with `MY.WantOS = "el8"` (two-site submission: SIDM
+census README, `sidm/studies/run3_signal_validation/v2_census/README.md`).
 
 **Recipe oracle** (`work/recipe_diff_<era>.txt` in the task record; produced by a dry run of `chain_job_v2.sh`
 with shimmed `cmsDriver.py`, diffed field by field against McM `get_setup`): GS = the newest `done` wmLHEGS request

@@ -23,7 +23,8 @@ Pass fraction of grouped HLT displaced-dimuon paths, and the combined OR:
 | 2023BPix | 62.5% → 70.6% (+8.1) | 20.8% → 28.4% (+7.6) | 36% |
 
 - The Run3-improved paths add **~+8% (4Mu) / ~+7% (2Mu2E)** to the 2018 set, uniformly across eras,
-  with the largest per-point gains (up to +26%) in the soft/low-mass, intermediate–long-cτ corners.
+  with the largest per-point gains (up to +29.7 points in 2022, +31.4 in 2022EE, +30.6 in 2023, +31.6 in
+  2023BPix, from the per-point tables) in the soft/low-mass, intermediate–long-cτ corners.
 - **2Mu2E is markedly trigger-limited** (~28% even with the full OR): it has only one muon pair.
 - **The VetoL3 (prompt-veto) paths are strongly cτ-dependent** — ~0% at short cτ (muons look prompt →
   vetoed), rising to 34–37% at long cτ — so they are the dominant new path in the displaced regime and
