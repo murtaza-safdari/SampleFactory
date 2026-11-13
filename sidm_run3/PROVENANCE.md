@@ -240,7 +240,7 @@ customisation, e.g. `EXO-Run3Summer22DRPremix-05903`, `EXO-Run3Summer22EEDRPremi
    *_csc2DRecHits_*_*"` (appended to `AODSIMoutput`), i.e. the 2022 AODSIM gets the 13_0_X muon-rechit content.
 Both are 2022/2022EE only and change no nano content: every era's EXONano carries the same tables (DSAMuon,
 DSAMuonVertex, extended PAT muons, ElectronVertex, DispJet, csc/dtMDSCluster, GenPart vertices). The
-`run3_miniAOD_12X` era modifier is not used (removed from 16_0_10 by cms-sw/cmssw PR 45240). In the recipe diffs these
+`run3_miniAOD_12X` era modifier is not used (cms-sw/cmssw PR 45240 deleted it in 14_1_X in 2024, so 16_0_10 does not have it). In the recipe diffs these
 two show as `APPROVED` (round 3), no other difference outside the allowed list.
 
 **Test-job fingerprints** (one 200-event job per era, 200 GeV / 1.2 GeV / 4.8 mm 4Mu; read back from the flat nano
