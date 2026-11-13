@@ -191,7 +191,7 @@ exists because we ran the full campaign on LPC before expressing it SampleFactor
 
 ## v2 production (all five eras, EXONanoAOD) — `sidm_run3_production/chain_job_v2.sh`
 The v1 samples above stay as they are (`run3_samplegen/outputs/<era>/`). v2 re-runs the whole chain with the
-McM campaign definitions as they stood on 2026-11-02 (all updated 2026-07-01) and replaces the LLPNanoAOD step
+McM campaign definitions as they stood on 2026-11-02 (McM shows the 2022 to 2023BPix campaigns last updated on 2026-07-01 and the two 2024 campaigns on 2026-09-22) and replaces the LLPNanoAOD step
 with the central EXO PAG custom NanoAOD (EXONanoAOD, `PAT,NANO:@EXO` from AODSIM in one step, `CMSSW_16_0_10`).
 Gridpacks, GEN fragment (13.6 TeV, lifetime via `32:tau0`, **no gen filter**, as v1) and sample names are v1's.
 
